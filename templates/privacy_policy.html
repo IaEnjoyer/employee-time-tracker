@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Política de Privacidad</h1>
+                    
+                    <h4 class="mt-4">1. Información que Recopilamos</h4>
+                    <p>Recopilamos la siguiente información personal:</p>
+                    <ul>
+                        <li>Nombre y apellidos</li>
+                        <li>Nombre de usuario</li>
+                        <li>Dirección de correo electrónico</li>
+                        <li>Registros de entrada y salida</li>
+                        <li>Dirección IP (para fines de seguridad)</li>
+                    </ul>
+
+                    <h4 class="mt-4">2. Finalidad del Tratamiento</h4>
+                    <p>Sus datos personales serán tratados para:</p>
+                    <ul>
+                        <li>Gestionar el registro de jornada laboral</li>
+                        <li>Generar informes de asistencia</li>
+                        <li>Cumplir con las obligaciones legales</li>
+                        <li>Garantizar la seguridad del sistema</li>
+                    </ul>
+
+                    <h4 class="mt-4">3. Base Legal</h4>
+                    <p>El tratamiento de sus datos se basa en:</p>
+                    <ul>
+                        <li>Su consentimiento explícito</li>
+                        <li>Obligaciones legales relacionadas con el registro de jornada</li>
+                        <li>Interés legítimo en la gestión de recursos humanos</li>
+                    </ul>
+
+                    <h4 class="mt-4">4. Período de Conservación</h4>
+                    <p>Sus datos se conservarán durante el tiempo necesario para cumplir con las finalidades descritas y las obligaciones legales, con un máximo de:</p>
+                    <ul>
+                        <li>Datos de usuario: mientras la cuenta esté activa</li>
+                        <li>Registros de jornada: 4 años según la legislación laboral</li>
+                        <li>Registros de consentimiento: permanente para fines de auditoría</li>
+                    </ul>
+
+                    <h4 class="mt-4">5. Sus Derechos</h4>
+                    <p>Usted tiene derecho a:</p>
+                    <ul>
+                        <li>Acceder a sus datos personales</li>
+                        <li>Rectificar datos inexactos</li>
+                        <li>Solicitar la supresión de sus datos</li>
+                        <li>Limitar el tratamiento de sus datos</li>
+                        <li>Portabilidad de sus datos</li>
+                        <li>Retirar su consentimiento en cualquier momento</li>
+                    </ul>
+
+                    <h4 class="mt-4">6. Medidas de Seguridad</h4>
+                    <p>Implementamos medidas técnicas y organizativas apropiadas para proteger sus datos personales, incluyendo:</p>
+                    <ul>
+                        <li>Encriptación de datos sensibles</li>
+                        <li>Control de acceso basado en roles</li>
+                        <li>Registro de actividades de tratamiento</li>
+                        <li>Copias de seguridad regulares</li>
+                    </ul>
+
+                    <h4 class="mt-4">7. Contacto</h4>
+                    <p>Para ejercer sus derechos o realizar consultas sobre el tratamiento de sus datos, puede contactar con nuestro Delegado de Protección de Datos:</p>
+                    <ul>
+                        <li>Email: dpo@empresa.com</li>
+                        <li>Teléfono: +34 900 000 000</li>
+                    </ul>
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('privacy_settings') }}" class="btn btn-primary">
+                            <i class="bi bi-gear"></i> Gestionar Preferencias de Privacidad
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Configuración de Privacidad</h2>
+                    
+                    <div class="mb-4">
+                        <h5>Estado de Consentimientos</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Tratamiento General de Datos
+                                {% if current_user.data_consent %}
+                                    <span class="badge bg-success">Aceptado</span>
+                                {% else %}
+                                    <span class="badge bg-danger">No Aceptado</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Fecha de Consentimiento
+                                <span>{{ current_user.consent_date.strftime('%d/%m/%Y %H:%M') if current_user.consent_date else 'No disponible' }}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Ejercer sus Derechos RGPD</h5>
+                        <div class="list-group">
+                            <a href="{{ url_for('export_data') }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Descargar mis Datos</h6>
+                                    <i class="bi bi-download"></i>
+                                </div>
+                                <p class="mb-1">Exportar todos sus datos personales en formato JSON</p>
+                            </a>
+                            
+                            <button type="button" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Eliminar mi Cuenta</h6>
+                                    <i class="bi bi-trash"></i>
+                                </div>
+                                <p class="mb-1">Eliminar permanentemente su cuenta y todos sus datos</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Enlaces Útiles</h5>
+                        <div class="list-group">
+                            <a href="{{ url_for('privacy_policy') }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Política de Privacidad</h6>
+                                    <i class="bi bi-file-text"></i>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('data_consent') }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Actualizar Consentimientos</h6>
+                                    <i class="bi bi-pencil"></i>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Advertencia:</strong> Esta acción es irreversible y eliminará permanentemente su cuenta y todos los datos asociados.
+                </div>
+                <p>Por favor, escriba "ELIMINAR" para confirmar:</p>
+                <input type="text" id="deleteConfirmInput" class="form-control" placeholder="ELIMINAR">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('delete_data') }}" id="deleteAccountForm">
+                    <input type="hidden" name="confirm" value="true">
+                    <button type="submit" class="btn btn-danger" id="deleteAccountBtn" disabled>
+                        Eliminar mi Cuenta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('deleteConfirmInput').addEventListener('input', function() {
+    document.getElementById('deleteAccountBtn').disabled = this.value !== 'ELIMINAR';
+});
+</script>
+{% endblock %}

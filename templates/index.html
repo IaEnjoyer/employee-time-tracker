@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="checkInToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div class="toast-header bg-warning text-dark">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong class="me-auto">Recordatorio</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            No has registrado tu entrada hoy.
+            <form method="POST" action="{{ url_for('check_in') }}" class="mt-2">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Registrar Entrada Ahora
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div id="checkInReminder" class="alert alert-warning d-none">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Recordatorio:</strong> No has registrado tu entrada hoy.
+            <form method="POST" action="{{ url_for('check_in') }}" class="mt-2">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Registrar Entrada Ahora
+                </button>
+            </form>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-body">
+                <h4 class="card-title">Estado Actual</h4>
+                {% if active_record %}
+                    <p class="text-success">
+                        <i class="bi bi-clock-history"></i>
+                        Entrada registrada: {{ active_record.check_in.strftime('%H:%M:%S') }}
+                    </p>
+                    <form method="POST" action="{{ url_for('check_out') }}">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="bi bi-box-arrow-right"></i> Registrar Salida
+                        </button>
+                    </form>
+                {% else %}
+                    <p class="text-muted">No hay registro activo</p>
+                    <form method="POST" action="{{ url_for('check_in') }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> Registrar Entrada
+                        </button>
+                    </form>
+                {% endif %}
+                <div class="mt-3">
+                    <a href="{{ url_for('generate_report') }}" class="btn btn-info w-100">
+                        <i class="bi bi-file-earmark-pdf"></i> Generar Informe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <h4 class="card-title">Historial de Registros</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Duración</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.check_in.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ record.check_in.strftime('%H:%M:%S') }}</td>
+                                <td>
+                                    {% if record.check_out %}
+                                        {{ record.check_out.strftime('%H:%M:%S') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.check_out %}
+                                        {% set duration = record.check_out - record.check_in %}
+                                        {{ '%d:%02d' | format(duration.seconds//3600, (duration.seconds//60)%60) }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+
+    // Initialize variables
+    var hasActiveRecord = "{{ 'true' if active_record else 'false' }}" === "true";
+    var loginTime = new Date();
+    var notificationShown = false;
+    var checkInterval = null;
+    var reminderElement = document.getElementById('checkInReminder');
+    var toast = document.getElementById('checkInToast');
+    var bsToast = null;
+
+    // Initialize Bootstrap toast if available
+    if (typeof bootstrap !== 'undefined' && toast) {
+        bsToast = new bootstrap.Toast(toast, {
+            autohide: false
+        });
+    }
+
+    // Function to show browser notification
+    function showBrowserNotification() {
+        if (!("Notification" in window)) {
+            return;
+        }
+
+        var notificationOpts = {
+            body: "No has registrado tu entrada hoy.",
+            icon: "{{ url_for('static', filename='clock-icon.png') }}",
+            tag: "check-in-reminder",
+            requireInteraction: true
+        };
+
+        try {
+            if (Notification.permission === "granted") {
+                new Notification("Recordatorio de Fichaje", notificationOpts);
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === "granted") {
+                        new Notification("Recordatorio de Fichaje", notificationOpts);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error showing notification:", error);
+        }
+    }
+
+    // Function to show notifications
+    function showNotifications() {
+        if (!hasActiveRecord && !notificationShown) {
+            // Show in-page alert
+            if (reminderElement) {
+                reminderElement.classList.remove('d-none');
+            }
+            
+            // Show toast notification
+            if (bsToast) {
+                bsToast.show();
+            }
+            
+            // Show browser notification
+            showBrowserNotification();
+            
+            notificationShown = true;
+            return true;
+        }
+        return false;
+    }
+    
+    // Check function
+    function checkAndNotify() {
+        var currentTime = new Date();
+        var timeDiff = (currentTime - loginTime) / 1000 / 60; // difference in minutes
+        
+        // Check if 5 minutes have passed
+        if (timeDiff >= 5) {
+            if (showNotifications()) {
+                // Stop interval if notifications were shown
+                if (checkInterval) {
+                    clearInterval(checkInterval);
+                    checkInterval = null;
+                }
+            }
+        }
+    }
+
+    // Set up the interval check
+    checkInterval = setInterval(checkAndNotify, 60000); // Check every minute
+
+    // TEST MODE: Uncomment to test notifications after 10 seconds
+    setTimeout(checkAndNotify, 10000);
+    
+    // Clean up on page unload
+    window.addEventListener('unload', function() {
+        if (checkInterval) {
+            clearInterval(checkInterval);
+            checkInterval = null;
+        }
+    });
+});
+</script>
+{% endblock %}

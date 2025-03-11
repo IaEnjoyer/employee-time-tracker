@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Consentimiento de Tratamiento de Datos</h2>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Para utilizar el sistema de fichaje, necesitamos su consentimiento para el tratamiento de sus datos personales de acuerdo con el RGPD.
+                    </div>
+
+                    <form method="POST" action="{{ url_for('data_consent') }}">
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="generalConsent" name="consent_type" value="general" required>
+                                <label class="form-check-label" for="generalConsent">
+                                    He leído y acepto la <a href="{{ url_for('privacy_policy') }}" target="_blank">Política de Privacidad</a>
+                                    y doy mi consentimiento para el tratamiento de mis datos personales.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="retentionConsent" name="consent_type" value="retention">
+                                <label class="form-check-label" for="retentionConsent">
+                                    Acepto que mis datos de fichaje se conserven por un período de 4 años según la legislación laboral vigente.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="reportingConsent" name="consent_type" value="reporting">
+                                <label class="form-check-label" for="reportingConsent">
+                                    Autorizo la generación de informes y análisis estadísticos con mis datos de fichaje.
+                                </label>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="granted" value="true">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Aceptar y Continuar
+                            </button>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> Rechazar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

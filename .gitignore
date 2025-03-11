@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.env
+instance/
+*.db
+*.sqlite3
+.DS_Store
+employee-time-tracker.zip
