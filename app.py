@@ -30,8 +30,15 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 bcrypt = Bcrypt(app)
 
-# Set locale for Spanish date formatting
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+# Configuración de locale
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES')
+    except locale.Error:
+        # Si no se puede configurar el locale español, usamos el predeterminado
+        locale.setlocale(locale.LC_TIME, '')
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
