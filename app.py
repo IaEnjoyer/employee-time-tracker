@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -14,7 +14,16 @@ import locale
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employee_time.db'
+
+# Configuración de la base de datos
+if os.environ.get('DATABASE_URL'):
+    # Railway proporciona DATABASE_URL, pero SQLAlchemy requiere un formato específico
+    database_url = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Configuración local SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employee_time.db'
+
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
