@@ -1,33 +1,41 @@
 from app import app, db, User, bcrypt
 from datetime import datetime
 
-with app.app_context():
-    # Drop all tables and recreate them
-    db.drop_all()
-    db.create_all()
-    
-    # Create admin user with all required fields
-    user = User(
-        username='admin',
-        password='admin123',
-        name='Administrador',
-        email='admin@empresa.com',
-        data_consent=True,
-        consent_date=datetime.utcnow(),
-        data_retention_days=365
-    )
-    db.session.add(user)
-    db.session.commit()
-    print("Usuario creado exitosamente")
+def create_admin_user():
+    with app.app_context():
+        # Verificar si el usuario admin ya existe
+        if User.query.filter_by(username='admin').first():
+            print("El usuario admin ya existe.")
+            return
+        
+        # Crear usuario administrador
+        hashed_password = bcrypt.generate_password_hash('admin123').decode('utf-8')
+        user = User(
+            username='admin',
+            password=hashed_password,
+            name='Administrador',
+            email='admin@empresa.com',
+            data_consent=True,
+            consent_date=datetime.utcnow(),
+            data_retention_days=365,
+            role='admin'
+        )
+        db.session.add(user)
+        try:
+            db.session.commit()
+            print("Usuario admin creado exitosamente")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al crear usuario admin: {e}")
 
 def create_employee():
     with app.app_context():
-        # Check if user already exists
+        # Verificar si el usuario ya existe
         if User.query.filter_by(username='empleado1').first():
             print("El usuario 'empleado1' ya existe.")
             return
 
-        # Create a new employee user
+        # Crear nuevo empleado
         hashed_password = bcrypt.generate_password_hash('empleado123').decode('utf-8')
         new_employee = User(
             username='empleado1',
@@ -40,10 +48,15 @@ def create_employee():
             data_retention_days=365
         )
 
-        # Add and commit to database
+        # Añadir y confirmar en la base de datos
         db.session.add(new_employee)
-        db.session.commit()
-        print("Usuario empleado creado exitosamente.")
+        try:
+            db.session.commit()
+            print("Usuario empleado creado exitosamente.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al crear empleado: {e}")
 
 if __name__ == '__main__':
+    create_admin_user()
     create_employee()
