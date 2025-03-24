@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Control Horario - Exroy Equipamientos</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Encabezado -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="text-primary">
+                    <i class="fas fa-building me-2"></i>
+                    <span th:text="${companyName}">Exroy Equipamientos</span>
+                </h2>
+                <p class="text-muted">Sistema de Control Horario</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Registro de Entrada/Salida -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Registro Horario
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${activeRecord}" class="text-center">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Jornada iniciada a las <strong th:text="${#temporals.format(activeRecord.startTime, 'HH:mm')}">00:00</strong>
+                            </div>
+                            <form th:action="@{/check-out}" method="POST" class="mt-3">
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Finalizar Jornada
+                                </button>
+                            </form>
+                        </div>
+                        <div th:unless="${activeRecord}" class="text-center">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                No hay jornada activa
+                            </div>
+                            <form th:action="@{/check-in}" method="POST" class="mt-3">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Iniciar Jornada
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tasks me-2"></i>
+                            Acciones Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a th:href="@{/reports}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-alt me-2"></i>
+                                Mi Informe Personal
+                                <small class="text-muted d-block">Generar informe de horas trabajadas</small>
+                            </a>
+                            <a th:href="@{/request-vacation}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-umbrella-beach me-2"></i>
+                                Solicitar Vacaciones
+                                <small class="text-muted d-block">Gestionar días de vacaciones</small>
+                            </a>
+                            <a th:href="@{/report-sick-leave}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-procedures me-2"></i>
+                                Comunicar Baja
+                                <small class="text-muted d-block">Informar ausencia por enfermedad</small>
+                            </a>
+                            <a th:href="@{/schedules}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Mi Horario
+                                <small class="text-muted d-block">Ver mi horario asignado</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen del Mes -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            Resumen del Mes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-business-time text-primary me-2"></i>
+                                            Horas Trabajadas
+                                        </td>
+                                        <td th:text="${monthlyHours ?: '0'} + ' horas'">0 horas</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-umbrella-beach text-warning me-2"></i>
+                                            Días de Vacaciones Disponibles
+                                        </td>
+                                        <td th:text="${vacationDays ?: '0'} + ' días'">0 días</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-clock text-success me-2"></i>
+                                            Días Trabajados
+                                        </td>
+                                        <td th:text="${workedDays ?: '0'} + ' días'">0 días</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

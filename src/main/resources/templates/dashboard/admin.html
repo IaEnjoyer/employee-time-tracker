@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Dashboard - Administrador</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="row">
+            <!-- Resumen -->
+            <div class="col-md-12 mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card shadow">
+                            <div class="card-body">
+                                <h5 class="card-title">Empleados Activos</h5>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h3 class="mb-0" th:text="${totalUsers}">0</h3>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-users fa-2x text-primary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow">
+                            <div class="card-body">
+                                <h5 class="card-title">Registros Pendientes</h5>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h3 class="mb-0" th:text="${pendingApprovals.size()}">0</h3>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-clock fa-2x text-warning"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow">
+                            <div class="card-body">
+                                <h5 class="card-title">Acciones Rápidas</h5>
+                                <div class="d-grid gap-2">
+                                    <a href="/admin/users/new" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-user-plus"></i> Nuevo Empleado
+                                    </a>
+                                    <a href="/admin/reports" class="btn btn-info btn-sm">
+                                        <i class="fas fa-file-alt"></i> Generar Informes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registros Pendientes -->
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Registros Pendientes de Aprobación</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Empleado</th>
+                                        <th>Fecha</th>
+                                        <th>Entrada</th>
+                                        <th>Salida</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="record : ${pendingApprovals}">
+                                        <td th:text="${record.user.name}">John Doe</td>
+                                        <td th:text="${#temporals.format(record.startTime, 'dd/MM/yyyy')}">01/01/2025</td>
+                                        <td th:text="${#temporals.format(record.startTime, 'HH:mm')}">09:00</td>
+                                        <td th:text="${record.endTime != null ? #temporals.format(record.endTime, 'HH:mm') : '-'}">18:00</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <form th:action="@{/admin/records/{id}/approve(id=${record.id})}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form th:action="@{/admin/records/{id}/reject(id=${record.id})}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimos Registros -->
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Últimos Registros</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Empleado</th>
+                                        <th>Fecha</th>
+                                        <th>Entrada</th>
+                                        <th>Salida</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="record : ${recentTimeRecords}">
+                                        <td th:text="${record.user.name}">John Doe</td>
+                                        <td th:text="${#temporals.format(record.startTime, 'dd/MM/yyyy')}">01/01/2025</td>
+                                        <td th:text="${#temporals.format(record.startTime, 'HH:mm')}">09:00</td>
+                                        <td th:text="${record.endTime != null ? #temporals.format(record.endTime, 'HH:mm') : '-'}">18:00</td>
+                                        <td>
+                                            <span th:class="${record.status.name() == 'APPROVED' ? 'badge bg-success' : (record.status.name() == 'REJECTED' ? 'badge bg-danger' : 'badge bg-warning')}"
+                                                  th:text="${record.status}">PENDING</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

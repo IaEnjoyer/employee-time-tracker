@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Generar Informe</h2>
+                <form method="POST">
+                    <div class="mb-4">
+                        <label class="form-label">Seleccione el periodo del informe:</label>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="report_type" value="week" class="btn btn-outline-primary">
+                                <i class="bi bi-calendar-week"></i> Última Semana
+                            </button>
+                            <button type="submit" name="report_type" value="month" class="btn btn-outline-primary">
+                                <i class="bi bi-calendar-month"></i> Último Mes
+                            </button>
+                            <button type="submit" name="report_type" value="year" class="btn btn-outline-primary">
+                                <i class="bi bi-calendar4"></i> Último Año
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

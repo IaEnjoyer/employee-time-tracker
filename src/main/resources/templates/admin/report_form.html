@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{base}">
+
+<head>
+    <title>Generar Informe Oficial</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0 d-flex align-items-center">
+                                <i class="fas fa-file-excel me-2"></i>
+                                Generar Informe Oficial de Horas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/reports/generate}" method="GET" class="needs-validation" novalidate>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fecha Inicio</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </span>
+                                            <input type="datetime-local" class="form-control" name="startDate" required>
+                                            <div class="invalid-feedback">
+                                                Por favor seleccione una fecha de inicio
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fecha Fin</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </span>
+                                            <input type="datetime-local" class="form-control" name="endDate" required>
+                                            <div class="invalid-feedback">
+                                                Por favor seleccione una fecha de fin
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                    <a th:href="@{/admin/dashboard}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>
+                                        Volver
+                                    </a>
+                                    <div class="btn-group">
+                                        <button type="submit" name="format" value="excel" class="btn btn-success">
+                                            <i class="fas fa-file-excel me-2"></i>
+                                            Excel
+                                        </button>
+                                        <button type="submit" name="format" value="pdf" class="btn btn-danger">
+                                            <i class="fas fa-file-pdf me-2"></i>
+                                            PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Instrucciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-calendar-check text-success me-2"></i>
+                                    Seleccione un rango de fechas para generar el informe.
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-clock text-info me-2"></i>
+                                    El informe incluirá todas las horas registradas en ese período.
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-file-excel text-primary me-2"></i>
+                                    Se generará un archivo Excel con el detalle por empleado.
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-calculator text-warning me-2"></i>
+                                    Los totales se calcularán automáticamente.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            (function () {
+                'use strict'
+                var forms = document.querySelectorAll('.needs-validation')
+                Array.prototype.slice.call(forms).forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        const startDate = new Date(form.startDate.value);
+                        const endDate = new Date(form.endDate.value);
+
+                        if (endDate < startDate) {
+                            event.preventDefault();
+                            alert('La fecha de fin debe ser posterior a la fecha de inicio');
+                            return;
+                        }
+
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+
+                // Establecer fechas por defecto
+                const now = new Date()
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+                document.querySelector('input[name="startDate"]').value = startOfMonth.toISOString().slice(0, 16)
+                document.querySelector('input[name="endDate"]').value = endOfMonth.toISOString().slice(0, 16)
+            })()
+        </script>
+    </th:block>
+</body>
+
+</html>

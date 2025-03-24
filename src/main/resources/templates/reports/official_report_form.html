@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{base}">
+<head>
+    <title>Generar Informe de Empleados</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-file-alt me-2"></i>
+                                Generar Informe de Empleados
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/reports/official/generate}" method="get" class="needs-validation" novalidate>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="startDate" class="form-label">Fecha Inicio</label>
+                                        <input type="datetime-local" class="form-control flatpickr" 
+                                               id="startDate" name="startDate" required>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una fecha de inicio.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="endDate" class="form-label">Fecha Fin</label>
+                                        <input type="datetime-local" class="form-control flatpickr" 
+                                               id="endDate" name="endDate" required>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una fecha de fin.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-download me-2"></i>
+                                        Generar Informe PDF
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Inicializar Flatpickr
+                flatpickr(".flatpickr", {
+                    enableTime: true,
+                    dateFormat: "Y-m-d'T'H:i",
+                    time_24hr: true,
+                    locale: "es",
+                    defaultDate: "today"
+                });
+
+                // Validación del formulario
+                const form = document.querySelector('.needs-validation');
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+
+                    // Validar que la fecha de fin sea posterior a la de inicio
+                    const startDate = new Date(document.getElementById('startDate').value);
+                    const endDate = new Date(document.getElementById('endDate').value);
+                    
+                    if (endDate <= startDate) {
+                        event.preventDefault();
+                        alert('La fecha de fin debe ser posterior a la fecha de inicio');
+                    }
+                });
+            });
+        </script>
+    </th:block>
+</body>
+</html>
