@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Solicitudes Pendientes</h2>
+
+    <!-- Vacaciones Pendientes -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Solicitudes de Vacaciones</h4>
+        </div>
+        <div class="card-body">
+            {% if vacations %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vacation in vacations %}
+                    <tr>
+                        <td>{{ vacation.user.name }}</td>
+                        <td>{{ vacation.start_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ vacation.end_date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('approve_request', type='vacation', id=vacation.id) }}" 
+                               class="btn btn-success btn-sm">Aprobar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No hay solicitudes de vacaciones pendientes.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bajas Laborales Pendientes -->
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Bajas Laborales Pendientes</h4>
+        </div>
+        <div class="card-body">
+            {% if sick_leaves %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Motivo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in sick_leaves %}
+                    <tr>
+                        <td>{{ leave.user.name }}</td>
+                        <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ leave.reason }}</td>
+                        <td>
+                            <a href="{{ url_for('approve_request', type='sick_leave', id=leave.id) }}" 
+                               class="btn btn-success btn-sm">Aprobar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No hay bajas laborales pendientes.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -35,6 +35,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
+                .ignoringRequestMatchers("/admin/**")  // Permitir operaciones POST/DELETE en endpoints admin
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame

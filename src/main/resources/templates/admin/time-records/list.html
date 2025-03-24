@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Registros de Tiempo</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Registros de Tiempo</h1>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/time-records}" method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="department">Departamento</label>
+                                    <select class="form-control" id="department" name="department">
+                                        <option value="">Todos</option>
+                                        <option th:each="dept : ${departments}"
+                                                th:value="${dept}"
+                                                th:text="${dept}">Departamento</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="start">Fecha Inicio</label>
+                                    <input type="datetime-local" class="form-control" id="start" name="start">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="end">Fecha Fin</label>
+                                    <input type="datetime-local" class="form-control" id="end" name="end">
+                                </div>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Lista de Registros</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Departamento</th>
+                                    <th>Fecha</th>
+                                    <th>Hora Entrada</th>
+                                    <th>Hora Salida</th>
+                                    <th>Total Horas</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="record : ${timeRecords}">
+                                    <td th:text="${record.user.name}">Usuario</td>
+                                    <td th:text="${record.user.department}">Departamento</td>
+                                    <td th:text="${#temporals.format(record.date, 'dd/MM/yyyy')}">Fecha</td>
+                                    <td th:text="${#temporals.format(record.startTime, 'HH:mm')}">09:00</td>
+                                    <td th:text="${#temporals.format(record.endTime, 'HH:mm')}">18:00</td>
+                                    <td th:text="${record.totalHours}">9</td>
+                                    <td>
+                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
+                                              class="badge badge-warning">Pendiente</span>
+                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).APPROVED}" 
+                                              class="badge badge-success">Aprobado</span>
+                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).REJECTED}" 
+                                              class="badge badge-danger">Rechazado</span>
+                                    </td>
+                                    <td>
+                                        <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}"
+                                                class="btn btn-success btn-sm approve-btn"
+                                                th:data-id="${record.id}">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}"
+                                                class="btn btn-danger btn-sm reject-btn"
+                                                th:data-id="${record.id}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rechazar Registro</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectForm">
+                        <div class="form-group">
+                            <label for="rejectReason">Motivo del Rechazo</label>
+                            <textarea class="form-control" id="rejectReason" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmReject">Rechazar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Approve button handler
+                document.querySelectorAll('.approve-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.dataset.id;
+                        if (confirm('¿Está seguro de aprobar este registro?')) {
+                            fetch(`/admin/time-records/${id}/approve`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            }).then(response => {
+                                if (response.ok) {
+                                    location.reload();
+                                } else {
+                                    alert('Error al aprobar el registro');
+                                }
+                            });
+                        }
+                    });
+                });
+
+                // Reject button handler
+                let selectedRecordId = null;
+                document.querySelectorAll('.reject-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        selectedRecordId = this.dataset.id;
+                        $('#rejectModal').modal('show');
+                    });
+                });
+
+                // Confirm reject handler
+                document.getElementById('confirmReject').addEventListener('click', function() {
+                    const reason = document.getElementById('rejectReason').value;
+                    if (!reason) {
+                        alert('Por favor, ingrese un motivo para el rechazo');
+                        return;
+                    }
+
+                    fetch(`/admin/time-records/${selectedRecordId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason: reason })
+                    }).then(response => {
+                        if (response.ok) {
+                            $('#rejectModal').modal('hide');
+                            location.reload();
+                        } else {
+                            alert('Error al rechazar el registro');
+                        }
+                    });
+                });
+            });
+        </script>
+    </th:block>
+</body>
+</html>

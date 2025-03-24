@@ -17,6 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED)
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,11 +36,7 @@ public class User implements UserDetails {
     private String name;
 
     @Column(nullable = false)
-    private String department;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.ACTIVE;
+    private String employeeId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -61,7 +58,6 @@ public class User implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supervisor_id")
-    @ToString.Exclude
     private User supervisor;
 
     @OneToMany(mappedBy = "supervisor")
@@ -85,16 +81,17 @@ public class User implements UserDetails {
     @ToString.Exclude
     private Set<Incident> assignedIncidents;
 
-    @Column(unique = true, nullable = false)
-    private String employeeId;
-
-    @Column(nullable = false)
-    private LocalDateTime hireDate;
-
     @Column(length = 1000)
     private String notes;
 
     private String photoUrl;
+
+    private LocalDateTime hireDate;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
+
+    private String department;
 
     public User(String username, String password, String name, Role role) {
         this.username = username;
@@ -144,13 +141,7 @@ public class User implements UserDetails {
         ACTIVE,
         ON_VACATION,
         ON_SICK_LEAVE,
-        INACTIVE
-    }
-
-    public enum Role {
-        ADMIN,
-        SUPERVISOR,
-        AUDITOR,
-        EMPLOYEE
+        INACTIVE,
+        PENDING_APPROVAL
     }
 }

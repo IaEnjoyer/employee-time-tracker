@@ -1,5 +1,6 @@
 package com.iaenjoyer.employeetimetracker.controller;
 
+import com.iaenjoyer.employeetimetracker.model.Role;
 import com.iaenjoyer.employeetimetracker.model.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.Authentication;
@@ -18,7 +19,7 @@ public class HomeController {
         }
 
         User user = (User) auth.getPrincipal();
-        if (User.Role.ADMIN.equals(user.getRole())) {
+        if (Role.ADMIN.equals(user.getRole())) {
             return "redirect:/admin/dashboard";
         }
 

@@ -2,6 +2,7 @@ package com.iaenjoyer.employeetimetracker.controller;
 
 import com.iaenjoyer.employeetimetracker.model.*;
 import com.iaenjoyer.employeetimetracker.service.*;
+import com.iaenjoyer.employeetimetracker.service.pdf.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -11,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,32 +48,34 @@ public class AdminController {
     public String listUsers(Model model) {
         model.addAttribute("users", userService.findAll());
         model.addAttribute("departments", userService.getAllDepartments());
-        model.addAttribute("roles", User.Role.values());
+        model.addAttribute("roles", Role.values());
         model.addAttribute("schedules", scheduleService.findAll());
-        model.addAttribute("supervisors", userService.getUsersByRole(User.Role.SUPERVISOR));
+        model.addAttribute("supervisors", userService.getUsersByRole(Role.SUPERVISOR));
         return "admin/users/list";
     }
 
     @GetMapping("/users/new")
     public String newUserForm(Model model) {
         model.addAttribute("user", new User());
-        model.addAttribute("roles", User.Role.values());
+        model.addAttribute("roles", Role.values());
         model.addAttribute("schedules", scheduleService.findAll());
-        model.addAttribute("supervisors", userService.getUsersByRole(User.Role.SUPERVISOR));
+        model.addAttribute("supervisors", userService.getUsersByRole(Role.SUPERVISOR));
         return "admin/users/form";
     }
 
     @PostMapping("/users/new")
     public String createUser(@ModelAttribute User user, Model model) {
         try {
+            user.setStatus(User.UserStatus.ACTIVE);
+            user.setConsentDate(LocalDateTime.now());
             userService.createUser(user);
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("user", user);
-            model.addAttribute("roles", User.Role.values());
+            model.addAttribute("roles", Role.values());
             model.addAttribute("schedules", scheduleService.findAll());
-            model.addAttribute("supervisors", userService.getUsersByRole(User.Role.SUPERVISOR));
+            model.addAttribute("supervisors", userService.getUsersByRole(Role.SUPERVISOR));
             return "admin/users/form";
         }
     }
@@ -81,9 +85,9 @@ public class AdminController {
         try {
             userService.findById(id).ifPresent(user -> {
                 model.addAttribute("user", user);
-                model.addAttribute("roles", User.Role.values());
+                model.addAttribute("roles", Role.values());
                 model.addAttribute("schedules", scheduleService.findAll());
-                model.addAttribute("supervisors", userService.getUsersByRole(User.Role.SUPERVISOR));
+                model.addAttribute("supervisors", userService.getUsersByRole(Role.SUPERVISOR));
             });
             return "admin/users/form";
         } catch (Exception e) {
@@ -100,9 +104,9 @@ public class AdminController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("user", user);
-            model.addAttribute("roles", User.Role.values());
+            model.addAttribute("roles", Role.values());
             model.addAttribute("schedules", scheduleService.findAll());
-            model.addAttribute("supervisors", userService.getUsersByRole(User.Role.SUPERVISOR));
+            model.addAttribute("supervisors", userService.getUsersByRole(Role.SUPERVISOR));
             return "admin/users/form";
         }
     }
@@ -125,6 +129,28 @@ public class AdminController {
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            return "redirect:/admin/users";
+        }
+    }
+
+    @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String deleteUser(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Usuario eliminado correctamente");
+            return "redirect:/admin/users";
+        } catch (IllegalArgumentException e) {
+            // Loguear el error para depuración
+            System.err.println("Error al eliminar usuario: " + e.getMessage());
+            
+            // Añadir mensaje de error específico
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/users";
+        } catch (Exception e) {
+            // Capturar cualquier otra excepción inesperada
+            System.err.println("Error inesperado al eliminar usuario: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error inesperado al eliminar usuario");
             return "redirect:/admin/users";
         }
     }
@@ -318,6 +344,74 @@ public class AdminController {
                     .body(report);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error al generar el reporte: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/reports/export/pdf")
+    public ResponseEntity<?> exportReportPdf(
+            @RequestParam String type,
+            @RequestParam(required = false) String department,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        
+        try {
+            byte[] report;
+            if ("department".equals(type)) {
+                if (department == null || department.trim().isEmpty()) {
+                    return ResponseEntity.badRequest().body("El departamento es obligatorio para reportes por departamento");
+                }
+                report = reportGeneratorService.generateDepartmentReportPdf(department, start, end);
+            } else if ("general".equals(type)) {
+                report = reportGeneratorService.generateGeneralReportPdf(start, end);
+            } else {
+                return ResponseEntity.badRequest().body("Tipo de reporte no válido");
+            }
+
+            String filename = String.format("reporte_%s_%s%s.pdf",
+                    type,
+                    department != null ? department + "_" : "",
+                    start.format(DATE_FORMATTER));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(report);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al generar el reporte PDF: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/reports/export/excel")
+    public ResponseEntity<?> exportReportExcel(
+            @RequestParam String type,
+            @RequestParam(required = false) String department,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        
+        try {
+            byte[] report;
+            if ("department".equals(type)) {
+                if (department == null || department.trim().isEmpty()) {
+                    return ResponseEntity.badRequest().body("El departamento es obligatorio para reportes por departamento");
+                }
+                report = reportGeneratorService.generateDepartmentReportExcel(department, start, end);
+            } else if ("general".equals(type)) {
+                report = reportGeneratorService.generateGeneralReportExcel(start, end);
+            } else {
+                return ResponseEntity.badRequest().body("Tipo de reporte no válido");
+            }
+
+            String filename = String.format("reporte_%s_%s%s.xlsx",
+                    type,
+                    department != null ? department + "_" : "",
+                    start.format(DATE_FORMATTER));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(report);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al generar el reporte Excel: " + e.getMessage());
         }
     }
 

@@ -1,5 +1,6 @@
 package com.iaenjoyer.employeetimetracker.controller;
 
+import com.iaenjoyer.employeetimetracker.model.Role;
 import com.iaenjoyer.employeetimetracker.model.User;
 import com.iaenjoyer.employeetimetracker.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class UserManagementController {
     @GetMapping("/new")
     public String newUserForm(Model model) {
         model.addAttribute("user", new User());
-        model.addAttribute("roles", User.Role.values());
+        model.addAttribute("roles", Role.values());
         return "users/form";
     }
 
@@ -36,7 +37,7 @@ public class UserManagementController {
     public String editUserForm(@PathVariable Long id, Model model) {
         userService.findById(id).ifPresent(user -> {
             model.addAttribute("user", user);
-            model.addAttribute("roles", User.Role.values());
+            model.addAttribute("roles", Role.values());
         });
         return "users/form";
     }

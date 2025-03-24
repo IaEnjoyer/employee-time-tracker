@@ -1,5 +1,6 @@
 package com.iaenjoyer.employeetimetracker.config;
 
+import com.iaenjoyer.employeetimetracker.model.Role;
 import com.iaenjoyer.employeetimetracker.model.User;
 import com.iaenjoyer.employeetimetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setPassword(passwordEncoder.encode("admin"));
         admin.setEmail("admin@company.com");
         admin.setName("Administrador");
-        admin.setRole(User.Role.ADMIN);
+        admin.setRole(Role.ADMIN);
         admin.setStatus(User.UserStatus.ACTIVE);
         admin.setDepartment("Administración");
         admin.setDataConsent(true);
@@ -46,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         supervisor.setPassword(passwordEncoder.encode("supervisor"));
         supervisor.setEmail("supervisor@company.com");
         supervisor.setName("Supervisor");
-        supervisor.setRole(User.Role.SUPERVISOR);
+        supervisor.setRole(Role.SUPERVISOR);
         supervisor.setStatus(User.UserStatus.ACTIVE);
         supervisor.setDepartment("Operaciones");
         supervisor.setDataConsent(true);
@@ -61,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         employee.setPassword(passwordEncoder.encode("employee"));
         employee.setEmail("employee@company.com");
         employee.setName("Empleado");
-        employee.setRole(User.Role.EMPLOYEE);
+        employee.setRole(Role.EMPLOYEE);
         employee.setStatus(User.UserStatus.ACTIVE);
         employee.setDepartment("Ventas");
         employee.setDataConsent(true);
@@ -77,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
         auditor.setPassword(passwordEncoder.encode("auditor"));
         auditor.setEmail("auditor@company.com");
         auditor.setName("Auditor");
-        auditor.setRole(User.Role.AUDITOR);
+        auditor.setRole(Role.AUDITOR);
         auditor.setStatus(User.UserStatus.ACTIVE);
         auditor.setDepartment("Auditoría");
         auditor.setDataConsent(true);

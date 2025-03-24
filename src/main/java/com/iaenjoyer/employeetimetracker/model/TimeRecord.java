@@ -2,21 +2,17 @@ package com.iaenjoyer.employeetimetracker.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
-@NoArgsConstructor
-@Table(name = "time_records")
 public class TimeRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -26,12 +22,18 @@ public class TimeRecord {
     @Column
     private LocalDateTime endTime;
 
-    @Column(nullable = false)
+    @Column
+    private String rejectionReason;
+
+    @Column(length = 1000)
+    private String notes;
+
+    @Column
     private double hours;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TimeRecordStatus status = TimeRecordStatus.PENDING;
+    private Status status = Status.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
@@ -39,12 +41,6 @@ public class TimeRecord {
 
     @Column
     private LocalDateTime approvalDate;
-
-    @Column(length = 500)
-    private String rejectionReason;
-
-    @Column(length = 1000)
-    private String notes;
 
     @PrePersist
     @PreUpdate
@@ -55,13 +51,24 @@ public class TimeRecord {
         }
     }
 
-    public enum TimeRecordStatus {
+    public enum Status {
         PENDING,
         APPROVED,
         REJECTED
     }
 
+    public double getHours() {
+        return hours;
+    }
+
+    public double getTotalHours() {
+        if (endTime == null) {
+            return 0;
+        }
+        return Duration.between(startTime, endTime).toHours();
+    }
+
     public boolean isApproved() {
-        return status.equals(TimeRecordStatus.APPROVED);
+        return status.equals(Status.APPROVED);
     }
 }

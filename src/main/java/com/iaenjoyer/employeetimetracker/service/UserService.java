@@ -1,6 +1,9 @@
 package com.iaenjoyer.employeetimetracker.service;
 
+import com.iaenjoyer.employeetimetracker.model.Role;
 import com.iaenjoyer.employeetimetracker.model.User;
+import com.iaenjoyer.employeetimetracker.repository.IncidentRepository;
+import com.iaenjoyer.employeetimetracker.repository.TimeRecordRepository;
 import com.iaenjoyer.employeetimetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +24,8 @@ import java.util.stream.Collectors;
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TimeRecordRepository timeRecordRepository;
+    private final IncidentRepository incidentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,12 +77,12 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> getUsersByRole(User.Role role) {
+    public List<User> getUsersByRole(Role role) {
         return userRepository.findByRole(role);
     }
 
     @Transactional(readOnly = true)
-    public List<User> findByRole(User.Role role) {
+    public List<User> findByRole(Role role) {
         return userRepository.findByRole(role);
     }
 
@@ -122,7 +127,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public User createUser(String username, String name, String department, User.Role role) {
+    public User createUser(String username, String name, String department, Role role) {
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode("changeme")); // Contraseña temporal
@@ -211,6 +216,95 @@ public class UserService implements UserDetailsService {
         return userRepository.existsByEmail(email);
     }
 
+    @Transactional(readOnly = true)
+    public List<User> findEmployeesBySupervisor(User supervisor) {
+        return userRepository.findBySupervisorAndRole(supervisor, Role.EMPLOYEE);
+    }
+
+    @Transactional
+    public User createEmployee(User employee) {
+        validateNewUser(employee);
+        if (employee.getPassword() != null) {
+            employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        }
+        return userRepository.save(employee);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findEmployeeById(Long id) {
+        return userRepository.findByIdAndRole(id, Role.EMPLOYEE)
+                .filter(user -> user instanceof User)
+                .map(user -> user);
+    }
+
+    @Transactional
+    public User updateEmployee(Long id, User employee) {
+        User existingEmployee = findEmployeeById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado"));
+
+        if (!existingEmployee.getId().equals(employee.getId())) {
+            throw new IllegalArgumentException("ID de empleado no coincide");
+        }
+
+        if (employee.getPassword() != null && !employee.getPassword().isEmpty()) {
+            employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        } else {
+            employee.setPassword(existingEmployee.getPassword());
+        }
+
+        return userRepository.save(employee);
+    }
+
+    @Transactional(readOnly = true)
+    public User getCurrentUser() {
+        String username = org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+        return findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Usuario no autenticado"));
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        // Buscar el usuario directamente en el repositorio
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        // Verificaciones previas a la eliminación
+        if (timeRecordRepository.existsByUser(user)) {
+            throw new IllegalArgumentException("No se puede eliminar un usuario con registros de tiempo");
+        }
+
+        if (incidentRepository.existsByReporter(user) || 
+            incidentRepository.existsByAssignee(user)) {
+            throw new IllegalArgumentException("No se puede eliminar un usuario con incidentes asociados");
+        }
+
+        // Eliminar referencias de supervisión
+        List<User> subordinates = userRepository.findBySupervisor(user);
+        for (User subordinate : subordinates) {
+            subordinate.setSupervisor(null);
+        }
+        userRepository.saveAll(subordinates);
+
+        // Eliminar el usuario directamente
+        userRepository.deleteById(id);
+        userRepository.flush();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getSubordinatesBySupervisor(User supervisor) {
+        return userRepository.findBySupervisor(supervisor);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getSubordinatesBySupervisorId(Long supervisorId) {
+        User supervisor = userRepository.findById(supervisorId)
+            .orElseThrow(() -> new IllegalArgumentException("Supervisor no encontrado"));
+        return userRepository.findBySupervisor(supervisor);
+    }
+
     private void validateNewUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new IllegalArgumentException("El nombre de usuario ya existe");
@@ -227,8 +321,14 @@ public class UserService implements UserDetailsService {
         if (user.getEmail() == null || !user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new IllegalArgumentException("El email no es válido");
         }
-        if (user.getDepartment() == null || user.getDepartment().trim().isEmpty()) {
-            throw new IllegalArgumentException("El departamento es obligatorio");
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre completo es obligatorio");
+        }
+        if (user.getEmployeeId() == null || user.getEmployeeId().trim().isEmpty()) {
+            throw new IllegalArgumentException("El documento de identificación es obligatorio");
+        }
+        if (user.getRole() == null) {
+            throw new IllegalArgumentException("El rol es obligatorio");
         }
     }
 }

@@ -12,11 +12,15 @@ import java.util.Optional;
 
 @Repository
 public interface TimeRecordRepository extends JpaRepository<TimeRecord, Long> {
+    List<TimeRecord> findByUserDepartmentAndStartTimeBetweenOrderByStartTimeDesc(String department, LocalDateTime start, LocalDateTime end);
+    List<TimeRecord> findByStartTimeBetweenOrderByStartTimeDesc(LocalDateTime start, LocalDateTime end);
+    List<TimeRecord> findByUserDepartmentOrderByStartTimeDesc(String department);
     List<TimeRecord> findByUser(User user);
     List<TimeRecord> findByUserAndStartTimeBetween(User user, LocalDateTime start, LocalDateTime end);
     Optional<TimeRecord> findByUserAndEndTimeIsNull(User user);
     List<TimeRecord> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     List<TimeRecord> findByUserIn(List<User> users);
     List<TimeRecord> findAllByOrderByStartTimeDesc(Pageable pageable);
-    List<TimeRecord> findByStatus(TimeRecord.TimeRecordStatus status);
+    List<TimeRecord> findByStatus(TimeRecord.Status status);
+    boolean existsByUser(User user);
 }

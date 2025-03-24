@@ -47,12 +47,17 @@ public class TimeRecordService {
         return timeRecordRepository.findAllByOrderByStartTimeDesc(PageRequest.of(0, RECENT_RECORDS_LIMIT));
     }
 
+    @Transactional(readOnly = true)
+    public List<TimeRecord> findByDepartmentAndDateRange(String department, LocalDateTime start, LocalDateTime end) {
+        return timeRecordRepository.findByUserDepartmentAndStartTimeBetweenOrderByStartTimeDesc(department, start, end);
+    }
+
     @Transactional
     public TimeRecord approveTimeRecord(Long id) {
         TimeRecord record = timeRecordRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado"));
         
-        record.setStatus(TimeRecord.TimeRecordStatus.APPROVED);
+        record.setStatus(TimeRecord.Status.APPROVED);
         notificationService.sendApprovalNotification(record.getUser());
         return timeRecordRepository.save(record);
     }
@@ -66,7 +71,7 @@ public class TimeRecordService {
         TimeRecord record = timeRecordRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado"));
         
-        record.setStatus(TimeRecord.TimeRecordStatus.REJECTED);
+        record.setStatus(TimeRecord.Status.REJECTED);
         record.setRejectionReason(reason);
         notificationService.sendRejectionNotification(record.getUser(), reason);
         return timeRecordRepository.save(record);
@@ -83,7 +88,7 @@ public class TimeRecordService {
         TimeRecord record = new TimeRecord();
         record.setUser(user);
         record.setStartTime(LocalDateTime.now());
-        record.setStatus(TimeRecord.TimeRecordStatus.PENDING);
+        record.setStatus(TimeRecord.Status.PENDING);
         return timeRecordRepository.save(record);
     }
 
