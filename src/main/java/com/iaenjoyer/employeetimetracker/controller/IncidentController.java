@@ -35,6 +35,7 @@ public class IncidentController {
     @GetMapping("/new")
     public String showNewIncidentForm(Model model) {
         model.addAttribute("users", userService.findAll());
+        model.addAttribute("incident", new Incident());
         return "incidents/form";
     }
 
@@ -45,16 +46,54 @@ public class IncidentController {
         try {
             String description = request.get("description");
             Long assigneeId = Long.parseLong(request.get("assigneeId"));
+            String typeStr = request.get("type");
             
             User assignee = userService.getUser(assigneeId);
             if (assignee == null) {
                 return ResponseEntity.badRequest().body("Usuario asignado no encontrado");
             }
             
-            Incident incident = incidentService.createIncident(description, reporter, assignee);
+            Incident.IncidentType type = Incident.IncidentType.valueOf(typeStr.toUpperCase());
+            
+            Incident incident = incidentService.createIncident(description, reporter, assignee, type);
             return ResponseEntity.ok(incident);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al crear el incidente: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/edit")
+    public String editIncidentForm(@PathVariable Long id, @AuthenticationPrincipal User user, Model model) {
+        Incident incident = incidentService.findById(id);
+        
+        if (incident == null || (!incident.getReporter().getId().equals(user.getId()) && !incident.getAssignee().getId().equals(user.getId()))) {
+            return "redirect:/incidents";
+        }
+        
+        model.addAttribute("incident", incident);
+        model.addAttribute("users", userService.findAll());
+        return "incidents/form";
+    }
+
+    @PostMapping("/{id}")
+    public String updateIncident(
+            @PathVariable Long id,
+            @ModelAttribute Incident updatedIncident,
+            @AuthenticationPrincipal User user,
+            Model model) {
+        try {
+            Incident existingIncident = incidentService.findById(id);
+            
+            if (existingIncident == null || (!existingIncident.getReporter().getId().equals(user.getId()) && !existingIncident.getAssignee().getId().equals(user.getId()))) {
+                return "redirect:/incidents";
+            }
+            
+            Incident savedIncident = incidentService.updateIncident(id, updatedIncident);
+            return "redirect:/incidents/" + savedIncident.getId();
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al actualizar el incidente: " + e.getMessage());
+            model.addAttribute("users", userService.findAll());
+            return "incidents/form";
         }
     }
 

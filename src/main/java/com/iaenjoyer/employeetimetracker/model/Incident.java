@@ -29,6 +29,10 @@ public class Incident {
     @Column(nullable = false)
     private IncidentStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private IncidentType type;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -44,5 +48,13 @@ public class Incident {
         RESOLVED,
         CLOSED,
         REJECTED
+    }
+
+    public enum IncidentType {
+        TECHNICAL_ISSUE,
+        HR_RELATED,
+        PERFORMANCE,
+        EQUIPMENT_REQUEST,
+        OTHER
     }
 }

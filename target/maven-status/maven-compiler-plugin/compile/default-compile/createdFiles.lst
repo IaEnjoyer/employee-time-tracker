@@ -23,6 +23,7 @@ com\iaenjoyer\employeetimetracker\repository\TimeRecordRepository.class
 com\iaenjoyer\employeetimetracker\repository\TimeTrackingRuleRepository.class
 com\iaenjoyer\employeetimetracker\service\ReportGeneratorService.class
 com\iaenjoyer\employeetimetracker\model\Role.class
+com\iaenjoyer\employeetimetracker\model\Incident$IncidentType.class
 com\iaenjoyer\employeetimetracker\controller\ScheduleController.class
 com\iaenjoyer\employeetimetracker\service\IncidentService.class
 com\iaenjoyer\employeetimetracker\model\Schedule.class

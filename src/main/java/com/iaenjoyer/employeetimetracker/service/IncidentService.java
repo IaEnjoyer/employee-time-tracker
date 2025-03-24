@@ -16,13 +16,15 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
 
     @Transactional
-    public Incident createIncident(String description, User reporter, User assignee) {
+    public Incident createIncident(String description, User reporter, User assignee, Incident.IncidentType type) {
         Incident incident = new Incident();
         incident.setDescription(description);
         incident.setReporter(reporter);
         incident.setAssignee(assignee);
+        incident.setType(type);
         incident.setStatus(Incident.IncidentStatus.OPEN);
         incident.setCreatedAt(LocalDateTime.now());
+        
         return incidentRepository.save(incident);
     }
 
@@ -68,5 +70,27 @@ public class IncidentService {
     @Transactional(readOnly = true)
     public List<Incident> findByReporterAndStatus(User reporter, Incident.IncidentStatus status) {
         return incidentRepository.findByReporterAndStatus(reporter, status);
+    }
+
+    @Transactional(readOnly = true)
+    public Incident findById(Long id) {
+        return incidentRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Incidente no encontrado"));
+    }
+
+    @Transactional
+    public Incident updateIncident(Long id, Incident updatedIncident) {
+        Incident existingIncident = findById(id);
+        
+        // Update only mutable fields
+        existingIncident.setDescription(updatedIncident.getDescription());
+        existingIncident.setType(updatedIncident.getType());
+        
+        // If a new assignee is provided, update it
+        if (updatedIncident.getAssignee() != null) {
+            existingIncident.setAssignee(updatedIncident.getAssignee());
+        }
+        
+        return incidentRepository.save(existingIncident);
     }
 }

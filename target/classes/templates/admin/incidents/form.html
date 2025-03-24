@@ -2,24 +2,26 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/admin}">
 <head>
-    <title th:text="${incident.id} ? 'Editar Incidencia' : 'Nueva Incidencia'"></title>
+    <title th:text="${incident.id != null} ? 'Editar Incidencia' : 'Nueva Incidencia'"></title>
 </head>
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
-            <h1 class="h3 mb-4 text-gray-800" th:text="${incident.id} ? 'Editar Incidencia' : 'Nueva Incidencia'"></h1>
+            <h1 class="h3 mb-4 text-gray-800" th:text="${incident.id != null} ? 'Editar Incidencia' : 'Nueva Incidencia'"></h1>
 
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Detalles de la Incidencia</h6>
                 </div>
                 <div class="card-body">
-                    <form th:action="${incident.id} ? @{/admin/incidents/{id}(id=${incident.id})} : @{/admin/incidents/new}"
+                    <form th:action="${incident.id != null} ? @{/admin/incidents/{id}(id=${incident.id})} : @{/admin/incidents/new}"
                           th:object="${incident}" method="post">
+                        <input type="hidden" name="reporterId" th:value="${#authentication.principal.id}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                         
                         <div class="form-group">
                             <label for="user">Usuario</label>
-                            <select class="form-control" id="user" th:field="*{user}" required>
+                            <select class="form-control" id="user" th:field="*{assignee}" required>
                                 <option value="">Seleccione un usuario</option>
                                 <option th:each="user : ${users}"
                                         th:value="${user.id}"
@@ -28,24 +30,23 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="description">Descripción</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" required></textarea>
+                        </div>
+
+                        <div class="form-group">
                             <label for="type">Tipo de Incidencia</label>
                             <select class="form-control" id="type" th:field="*{type}" required>
                                 <option value="">Seleccione un tipo</option>
-                                <option th:each="type : ${T(com.iaenjoyer.employeetimetracker.model.Incident.IncidentType).values()}"
+                                <option th:each="type : ${incidentTypes}"
                                         th:value="${type}"
                                         th:text="${type}"></option>
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="description">Descripción</label>
-                            <textarea class="form-control" id="description" th:field="*{description}" rows="3" required></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <a th:href="@{/admin/incidents}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span th:text="${incident.id != null} ? 'Actualizar Incidencia' : 'Crear Incidencia'"></span>
+                        </button>
                     </form>
                 </div>
             </div>

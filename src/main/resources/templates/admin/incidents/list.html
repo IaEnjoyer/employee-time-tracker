@@ -20,7 +20,7 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Usuario</th>
+                                    <th>Asignado a</th>
                                     <th>Tipo</th>
                                     <th>Descripción</th>
                                     <th>Estado</th>
@@ -31,7 +31,7 @@
                             <tbody>
                                 <tr th:each="incident : ${incidents}">
                                     <td th:text="${incident.id}"></td>
-                                    <td th:text="${incident.user.name}"></td>
+                                    <td th:text="${incident.assignee.name}"></td>
                                     <td th:text="${incident.type}"></td>
                                     <td th:text="${incident.description}"></td>
                                     <td th:text="${incident.status}"></td>
@@ -42,14 +42,14 @@
                                                class="btn btn-primary btn-sm">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form th:if="${incident.status == T(com.iaenjoyer.employeetimetracker.model.Incident.IncidentStatus).PENDING}"
+                                            <form th:if="${incident.status == T(com.iaenjoyer.employeetimetracker.model.Incident.IncidentStatus).OPEN}"
                                                   th:action="@{/admin/incidents/{id}/approve(id=${incident.id})}" 
                                                   method="post" style="display: inline;">
                                                 <button type="submit" class="btn btn-success btn-sm">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                             </form>
-                                            <button th:if="${incident.status == T(com.iaenjoyer.employeetimetracker.model.Incident.IncidentStatus).PENDING}"
+                                            <button th:if="${incident.status == T(com.iaenjoyer.employeetimetracker.model.Incident.IncidentStatus).OPEN}"
                                                     type="button" 
                                                     class="btn btn-danger btn-sm"
                                                     th:data-incident-id="${incident.id}"

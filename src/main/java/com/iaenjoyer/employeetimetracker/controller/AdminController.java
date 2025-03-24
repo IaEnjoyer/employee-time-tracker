@@ -208,27 +208,107 @@ public class AdminController {
     @GetMapping("/incidents/new")
     public String showIncidentForm(Model model) {
         model.addAttribute("users", userService.findAll());
+        model.addAttribute("incident", new Incident());
+        model.addAttribute("incidentTypes", Incident.IncidentType.values());
         return "admin/incidents/form";
     }
 
-    @PostMapping("/incidents")
-    public ResponseEntity<?> createIncident(@RequestBody Map<String, String> request) {
+    @PostMapping("/incidents/new")
+    public String createIncident(@ModelAttribute Incident incident, 
+                                 @RequestParam("reporterId") Long reporterId, 
+                                 Model model) {
         try {
-            String description = request.get("description");
-            Long reporterId = Long.parseLong(request.get("reporterId"));
-            Long assigneeId = Long.parseLong(request.get("assigneeId"));
-
+            // Get the current user as the reporter
             User reporter = userService.getUser(reporterId);
-            User assignee = userService.getUser(assigneeId);
-
-            if (reporter == null || assignee == null) {
-                return ResponseEntity.badRequest().body("Usuario no encontrado");
+            
+            if (reporter == null) {
+                model.addAttribute("error", "Usuario no encontrado");
+                model.addAttribute("users", userService.findAll());
+                model.addAttribute("incidentTypes", Incident.IncidentType.values());
+                return "admin/incidents/form";
             }
 
-            Incident incident = incidentService.createIncident(description, reporter, assignee);
-            return ResponseEntity.ok(incident);
+            // Set the reporter
+            incident.setReporter(reporter);
+
+            // Create the incident
+            Incident createdIncident = incidentService.createIncident(
+                incident.getDescription(), 
+                reporter, 
+                incident.getAssignee(), 
+                incident.getType()
+            );
+
+            return "redirect:/admin/incidents";
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear el incidente: " + e.getMessage());
+            model.addAttribute("error", "Error al crear el incidente: " + e.getMessage());
+            model.addAttribute("users", userService.findAll());
+            model.addAttribute("incidentTypes", Incident.IncidentType.values());
+            return "admin/incidents/form";
+        }
+    }
+
+    @GetMapping("/incidents/{id}/edit")
+    public String editIncidentForm(@PathVariable Long id, Model model) {
+        Incident incident = incidentService.findById(id);
+        model.addAttribute("incident", incident);
+        model.addAttribute("users", userService.findAll());
+        model.addAttribute("incidentTypes", Incident.IncidentType.values());
+        return "admin/incidents/form";
+    }
+
+    @PostMapping("/incidents/{id}")
+    public String updateIncident(@PathVariable Long id, 
+                                 @ModelAttribute Incident incident, 
+                                 @RequestParam("reporterId") Long reporterId, 
+                                 Model model) {
+        try {
+            // Get the current user as the reporter
+            User reporter = userService.getUser(reporterId);
+            
+            if (reporter == null) {
+                model.addAttribute("error", "Usuario no encontrado");
+                model.addAttribute("users", userService.findAll());
+                model.addAttribute("incidentTypes", Incident.IncidentType.values());
+                return "admin/incidents/form";
+            }
+
+            // Ensure the incident has the correct ID
+            incident.setId(id);
+
+            // Update the incident
+            Incident updatedIncident = incidentService.updateIncident(id, incident);
+
+            return "redirect:/admin/incidents";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al actualizar el incidente: " + e.getMessage());
+            model.addAttribute("users", userService.findAll());
+            model.addAttribute("incidentTypes", Incident.IncidentType.values());
+            return "admin/incidents/form";
+        }
+    }
+
+    @PostMapping("/incidents/{id}/approve")
+    public String approveIncident(@PathVariable Long id, Model model) {
+        try {
+            Incident incident = incidentService.updateStatus(id, Incident.IncidentStatus.IN_PROGRESS, null);
+            return "redirect:/admin/incidents";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al aprobar la incidencia: " + e.getMessage());
+            return "redirect:/admin/incidents";
+        }
+    }
+
+    @PostMapping("/incidents/{id}/reject")
+    public String rejectIncident(@PathVariable Long id, 
+                                 @RequestParam("reason") String reason, 
+                                 Model model) {
+        try {
+            Incident incident = incidentService.updateStatus(id, Incident.IncidentStatus.REJECTED, reason);
+            return "redirect:/admin/incidents";
+        } catch (Exception e) {
+            model.addAttribute("error", "Error al rechazar la incidencia: " + e.getMessage());
+            return "redirect:/admin/incidents";
         }
     }
 
