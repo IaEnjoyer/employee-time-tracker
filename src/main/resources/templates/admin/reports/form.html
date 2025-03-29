@@ -4,6 +4,7 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Generación de Reportes</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
 </head>
 <body>
     <div layout:fragment="content">
@@ -83,82 +84,147 @@
     </div>
 
     <th:block layout:fragment="scripts">
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const typeSelect = document.getElementById('type');
-                const departmentGroup = document.getElementById('departmentGroup');
-                const generateBtn = document.getElementById('generateBtn');
-                const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-                const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-                const previewCard = document.getElementById('previewCard');
-                const previewContent = document.getElementById('previewContent');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.getElementById('type');
+            const departmentGroup = document.getElementById('departmentGroup');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+            const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+            const previewCard = document.getElementById('previewCard');
+            const previewContent = document.getElementById('previewContent');
+            const reportForm = document.getElementById('reportForm');
 
-                typeSelect.addEventListener('change', function() {
-                    departmentGroup.style.display = this.value === 'department' ? 'block' : 'none';
-                });
-
-                function getFormData() {
-                    const type = typeSelect.value;
-                    const department = document.getElementById('department').value;
-                    const start = document.getElementById('start').value;
-                    const end = document.getElementById('end').value;
-
-                    if (!type || !start || !end) {
-                        alert('Por favor complete todos los campos requeridos');
-                        return null;
-                    }
-
-                    if (type === 'department' && !department) {
-                        alert('Por favor seleccione un departamento');
-                        return null;
-                    }
-
-                    return { type, department, start, end };
-                }
-
-                generateBtn.addEventListener('click', function() {
-                    const data = getFormData();
-                    if (!data) return;
-
-                    const params = new URLSearchParams(data);
-                    fetch(`/admin/reports/generate?${params}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            previewCard.style.display = 'block';
-                            previewContent.innerHTML = formatPreviewData(data);
-                        })
-                        .catch(error => {
-                            alert('Error al generar la vista previa');
-                            console.error('Error:', error);
-                        });
-                });
-
-                downloadPdfBtn.addEventListener('click', function() {
-                    const data = getFormData();
-                    if (!data) return;
-
-                    const params = new URLSearchParams(data);
-                    window.location.href = `/admin/reports/export/pdf?${params}`;
-                });
-
-                downloadExcelBtn.addEventListener('click', function() {
-                    const data = getFormData();
-                    if (!data) return;
-
-                    const params = new URLSearchParams(data);
-                    window.location.href = `/admin/reports/export/excel?${params}`;
-                });
-
-                function formatPreviewData(data) {
-                    // Format the preview data based on the response structure
-                    let html = '<div class="table-responsive">';
-                    html += '<table class="table table-bordered">';
-                    // Add table headers and rows based on data structure
-                    html += '</table></div>';
-                    return html;
-                }
+            // Show/hide department dropdown based on report type
+            typeSelect.addEventListener('change', function() {
+                departmentGroup.style.display = this.value === 'department' ? 'block' : 'none';
             });
-        </script>
-    </th:block>
+
+            // Validate form before submission
+            function validateForm() {
+                const type = typeSelect.value;
+                const start = document.getElementById('start').value;
+                const end = document.getElementById('end').value;
+                const department = type === 'department' ? document.getElementById('department').value : null;
+
+                if (!type) {
+                    alert('Por favor, seleccione un tipo de reporte');
+                    return false;
+                }
+
+                if (type === 'department' && !department) {
+                    alert('Por favor, seleccione un departamento');
+                    return false;
+                }
+
+                if (!start || !end) {
+                    alert('Por favor, seleccione las fechas de inicio y fin');
+                    return false;
+                }
+
+                // Validate end date is after start date
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                if (endDate <= startDate) {
+                    alert('La fecha de fin debe ser posterior a la fecha de inicio');
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Prepare query parameters
+            function getQueryParams() {
+                const type = typeSelect.value;
+                const start = document.getElementById('start').value;
+                const end = document.getElementById('end').value;
+                const department = type === 'department' ? document.getElementById('department').value : '';
+
+                return new URLSearchParams({
+                    type: type,
+                    department: department,
+                    start: start,
+                    end: end
+                });
+            }
+
+            // Format preview data into a more readable HTML table
+            function formatPreviewData(data) {
+                if (!data || Object.keys(data).length === 0) {
+                    return '<p>No se encontraron datos para el reporte.</p>';
+                }
+
+                let html = '<div class="table-responsive">';
+                html += '<table class="table table-striped table-bordered">';
+                
+                // Add table headers
+                html += '<thead><tr>';
+                Object.keys(data[0] || {}).forEach(key => {
+                    html += `<th>${key}</th>`;
+                });
+                html += '</tr></thead>';
+
+                // Add table body
+                html += '<tbody>';
+                (data || []).forEach(item => {
+                    html += '<tr>';
+                    Object.values(item).forEach(value => {
+                        html += `<td>${value}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+
+                html += '</table></div>';
+                return html;
+            }
+
+            // Preview report
+            generateBtn.addEventListener('click', function() {
+                if (!validateForm()) return;
+
+                const params = getQueryParams();
+                fetch(`/admin/reports/generate?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al generar la vista previa');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Populate preview content with formatted data
+                    previewContent.innerHTML = formatPreviewData(data);
+                    previewCard.style.display = 'block';
+                })
+                .catch(error => {
+                    alert(error.message);
+                    previewContent.innerHTML = `<p class="text-danger">${error.message}</p>`;
+                    previewCard.style.display = 'block';
+                });
+            });
+
+            // Download PDF
+            downloadPdfBtn.addEventListener('click', function() {
+                if (!validateForm()) return;
+
+                const params = getQueryParams();
+                window.location.href = `/admin/reports/export/pdf?${params}`;
+            });
+
+            // Download Excel
+            downloadExcelBtn.addEventListener('click', function() {
+                if (!validateForm()) return;
+
+                const params = getQueryParams();
+                window.location.href = `/admin/reports/export/excel?${params}`;
+            });
+        });
+    </script>
+</th:block>
 </body>
 </html>

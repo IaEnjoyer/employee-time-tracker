@@ -4,98 +4,97 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Registros de Tiempo</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
     <div layout:fragment="content">
         <div class="container-fluid">
             <h1 class="h3 mb-4 text-gray-800">Registros de Tiempo</h1>
             
+            <!-- Filtros -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
                 </div>
                 <div class="card-body">
-                    <form th:action="@{/admin/time-records}" method="get" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="department">Departamento</label>
-                                    <select class="form-control" id="department" name="department">
-                                        <option value="">Todos</option>
-                                        <option th:each="dept : ${departments}"
-                                                th:value="${dept}"
-                                                th:text="${dept}">Departamento</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="start">Fecha Inicio</label>
-                                    <input type="datetime-local" class="form-control" id="start" name="start">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="end">Fecha Fin</label>
-                                    <input type="datetime-local" class="form-control" id="end" name="end">
-                                </div>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Filtrar
-                                </button>
-                            </div>
+                    <form th:action="@{/admin/time-records}" method="get" class="form-inline">
+                        <div class="form-group mr-2">
+                            <label for="department" class="mr-2">Departamento:</label>
+                            <select id="department" name="department" class="form-control">
+                                <option value="">Todos</option>
+                                <option th:each="dept : ${departments}" 
+                                        th:value="${dept}" 
+                                        th:text="${dept}"
+                                        th:selected="${param.department == dept}">
+                                </option>
+                            </select>
                         </div>
+                        <div class="form-group mr-2">
+                            <label for="start" class="mr-2">Desde:</label>
+                            <input type="datetime-local" id="start" name="start" class="form-control" 
+                                   th:value="${param.start != null ? param.start : ''}">
+                        </div>
+                        <div class="form-group mr-2">
+                            <label for="end" class="mr-2">Hasta:</label>
+                            <input type="datetime-local" id="end" name="end" class="form-control"
+                                   th:value="${param.end != null ? param.end : ''}">
+                        </div>
+                        <button type="submit" class="btn btn-primary mr-2">Filtrar</button>
+                        <a th:href="@{/admin/time-records}" class="btn btn-secondary">Limpiar</a>
                     </form>
                 </div>
             </div>
 
+            <!-- Tabla de Registros -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Lista de Registros</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Registros de Tiempo</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <table class="table table-bordered" id="timeRecordsTable" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Usuario</th>
                                     <th>Departamento</th>
-                                    <th>Fecha</th>
-                                    <th>Hora Entrada</th>
-                                    <th>Hora Salida</th>
-                                    <th>Total Horas</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="record : ${timeRecords}">
-                                    <td th:text="${record.user.name}">Usuario</td>
-                                    <td th:text="${record.user.department}">Departamento</td>
-                                    <td th:text="${#temporals.format(record.date, 'dd/MM/yyyy')}">Fecha</td>
-                                    <td th:text="${#temporals.format(record.startTime, 'HH:mm')}">09:00</td>
-                                    <td th:text="${#temporals.format(record.endTime, 'HH:mm')}">18:00</td>
-                                    <td th:text="${record.totalHours}">9</td>
+                                    <td th:text="${record.id}">1</td>
+                                    <td th:text="${record.user.name}">John Doe</td>
+                                    <td th:text="${record.user.department}">IT</td>
+                                    <td th:text="${#temporals.format(record.startTime, 'dd/MM/yyyy HH:mm')}">01/01/2025 09:00</td>
+                                    <td th:text="${record.endTime != null ? #temporals.format(record.endTime, 'dd/MM/yyyy HH:mm') : 'En curso'}">01/01/2025 18:00</td>
                                     <td>
-                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
-                                              class="badge badge-warning">Pendiente</span>
-                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).APPROVED}" 
-                                              class="badge badge-success">Aprobado</span>
-                                        <span th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).REJECTED}" 
-                                              class="badge badge-danger">Rechazado</span>
+                                        <span th:switch="${record.status}" class="badge" 
+                                              th:classappend="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING} ? 'badge-warning' : 
+                                                             (${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).APPROVED} ? 'badge-success' : 
+                                                             'badge-danger')">
+                                            <span th:case="PENDING">Pendiente</span>
+                                            <span th:case="APPROVED">Aprobado</span>
+                                            <span th:case="REJECTED">Rechazado</span>
+                                        </span>
                                     </td>
                                     <td>
-                                        <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}"
-                                                class="btn btn-success btn-sm approve-btn"
-                                                th:data-id="${record.id}">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}"
-                                                class="btn btn-danger btn-sm reject-btn"
-                                                th:data-id="${record.id}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
+                                                    class="btn btn-success btn-sm approve-record" 
+                                                    th:data-id="${record.id}">
+                                                <i class="fas fa-check"></i> Aprobar
+                                            </button>
+                                            <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
+                                                    class="btn btn-danger btn-sm reject-record" 
+                                                    th:data-id="${record.id}">
+                                                <i class="fas fa-times"></i> Rechazar
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -111,16 +110,17 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Rechazar Registro</h5>
+                    <h5 class="modal-title">Rechazar Registro de Tiempo</h5>
                     <button type="button" class="close" data-dismiss="modal">
                         <span>&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <form id="rejectForm">
+                        <input type="hidden" id="rejectRecordId" name="recordId">
                         <div class="form-group">
-                            <label for="rejectReason">Motivo del Rechazo</label>
-                            <textarea class="form-control" id="rejectReason" rows="3" required></textarea>
+                            <label for="rejectionReason">Razón del Rechazo</label>
+                            <textarea class="form-control" id="rejectionReason" name="reason" rows="3" required></textarea>
                         </div>
                     </form>
                 </div>
@@ -133,62 +133,56 @@
     </div>
 
     <th:block layout:fragment="scripts">
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Approve button handler
-                document.querySelectorAll('.approve-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.dataset.id;
-                        if (confirm('¿Está seguro de aprobar este registro?')) {
-                            fetch(`/admin/time-records/${id}/approve`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            }).then(response => {
-                                if (response.ok) {
-                                    location.reload();
-                                } else {
-                                    alert('Error al aprobar el registro');
-                                }
-                            });
-                        }
-                    });
-                });
-
-                // Reject button handler
-                let selectedRecordId = null;
-                document.querySelectorAll('.reject-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        selectedRecordId = this.dataset.id;
-                        $('#rejectModal').modal('show');
-                    });
-                });
-
-                // Confirm reject handler
-                document.getElementById('confirmReject').addEventListener('click', function() {
-                    const reason = document.getElementById('rejectReason').value;
-                    if (!reason) {
-                        alert('Por favor, ingrese un motivo para el rechazo');
-                        return;
+        <script th:src="@{/js/jquery.min.js}"></script>
+        <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+        <script th:inline="javascript">
+        $(document).ready(function() {
+            // Approve Record
+            $('.approve-record').on('click', function() {
+                var recordId = $(this).data('id');
+                $.ajax({
+                    url: '/admin/time-records/' + recordId + '/approve',
+                    type: 'POST',
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Error al aprobar el registro: ' + xhr.responseText);
                     }
-
-                    fetch(`/admin/time-records/${selectedRecordId}/reject`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ reason: reason })
-                    }).then(response => {
-                        if (response.ok) {
-                            $('#rejectModal').modal('hide');
-                            location.reload();
-                        } else {
-                            alert('Error al rechazar el registro');
-                        }
-                    });
                 });
             });
+
+            // Reject Record - Open Modal
+            $('.reject-record').on('click', function() {
+                var recordId = $(this).data('id');
+                $('#rejectRecordId').val(recordId);
+                $('#rejectModal').modal('show');
+            });
+
+            // Confirm Reject
+            $('#confirmReject').on('click', function() {
+                var recordId = $('#rejectRecordId').val();
+                var reason = $('#rejectionReason').val();
+
+                if (!reason) {
+                    alert('Por favor, proporcione una razón para el rechazo');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/admin/time-records/' + recordId + '/reject',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ reason: reason }),
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Error al rechazar el registro: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
         </script>
     </th:block>
 </body>

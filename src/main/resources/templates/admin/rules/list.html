@@ -4,6 +4,7 @@
       layout:decorate="~{layouts/main}">
 <head>
     <title>Reglas de Seguimiento de Tiempo</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
 </head>
 <body>
     <div layout:fragment="content">
@@ -23,21 +24,24 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Tipo</th>
-                                    <th>Estado</th>
+                                    <th>Ubicación Requerida</th>
+                                    <th>Entrada Manual</th>
+                                    <th>Minutos de Tolerancia</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="rule : ${rules}">
                                     <td th:text="${rule.name}">Nombre de la Regla</td>
-                                    <td th:text="${rule.description}">Descripción</td>
-                                    <td th:text="${rule.type}">Tipo</td>
                                     <td>
-                                        <span th:if="${rule.active}" class="badge badge-success">Activa</span>
-                                        <span th:unless="${rule.active}" class="badge badge-secondary">Inactiva</span>
+                                        <span th:if="${rule.requireLocation}" class="badge badge-success">Sí</span>
+                                        <span th:unless="${rule.requireLocation}" class="badge badge-secondary">No</span>
                                     </td>
+                                    <td>
+                                        <span th:if="${rule.allowManualEntry}" class="badge badge-success">Permitida</span>
+                                        <span th:unless="${rule.allowManualEntry}" class="badge badge-secondary">No Permitida</span>
+                                    </td>
+                                    <td th:text="${rule.maxLateMinutes}">Minutos de Tolerancia</td>
                                     <td>
                                         <a th:href="@{/admin/rules/{id}/edit(id=${rule.id})}" 
                                            class="btn btn-primary btn-sm">

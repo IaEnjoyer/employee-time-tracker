@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title th:text="${rule.id == null ? 'Nueva Regla' : 'Editar Regla'}">Nueva/Editar Regla</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800" 
+                th:text="${rule.id == null ? 'Nueva Regla de Seguimiento' : 'Editar Regla de Seguimiento'}">
+                Nueva/Editar Regla de Seguimiento
+            </h1>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Detalles de la Regla</h6>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{${rule.id == null ? '/admin/rules/new' : '/admin/rules/' + rule.id}}" 
+                          th:object="${rule}" 
+                          method="post">
+                        <input type="hidden" th:if="${rule.id != null}" name="_method" value="PUT">
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="name">Nombre de la Regla</label>
+                                <input type="text" class="form-control" id="name" th:field="*{name}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="requireLocation" th:field="*{requireLocation}">
+                                    <label class="form-check-label" for="requireLocation">Requerir Ubicación</label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="allowManualEntry" th:field="*{allowManualEntry}">
+                                    <label class="form-check-label" for="allowManualEntry">Permitir Entrada Manual</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="maxLateMinutes">Minutos de Tolerancia para Retrasos</label>
+                                <input type="number" class="form-control" id="maxLateMinutes" th:field="*{maxLateMinutes}">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="earlyCheckoutMinutes">Minutos Permitidos para Salida Anticipada</label>
+                                <input type="number" class="form-control" id="earlyCheckoutMinutes" th:field="*{earlyCheckoutMinutes}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="allowedIps">IPs Permitidas (separadas por coma)</label>
+                            <input type="text" class="form-control" id="allowedIps" 
+                                   th:value="${rule.allowedIps != null ? #strings.arrayJoin(rule.allowedIps, ',') : ''}"
+                                   name="allowedIps">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="allowedDevices">Dispositivos Permitidos (separados por coma)</label>
+                            <input type="text" class="form-control" id="allowedDevices" 
+                                   th:value="${rule.allowedDevices != null ? #strings.arrayJoin(rule.allowedDevices, ',') : ''}"
+                                   name="allowedDevices">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <span th:text="${rule.id == null ? 'Crear' : 'Actualizar'} + ' Regla'">Crear/Actualizar Regla</span>
+                        </button>
+                        <a th:href="@{/admin/rules}" class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
