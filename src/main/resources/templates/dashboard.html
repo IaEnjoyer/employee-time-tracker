@@ -7,49 +7,75 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Arial', sans-serif;
+        }
         .clock {
             font-size: 2.5rem;
             font-weight: bold;
             color: #0d6efd;
+            background-color: #e9ecef;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .status-card {
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
         }
         .status-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .navbar {
+            background: linear-gradient(to right, #0d6efd, #4a90e2);
+        }
+        .card-title {
+            color: #2c3e50;
+            font-weight: 600;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+        }
+        .btn-quick-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-quick-action:hover {
+            transform: scale(1.05);
+        }
+        .btn-quick-action i {
+            font-size: 1.2rem;
         }
     </style>
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="#" th:text="${companyName}">Company Name</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <span class="nav-link" th:text="${user.name}">User Name</span>
-                    </li>
-                    <li class="nav-item">
-                        <form th:action="@{/logout}" method="post">
-                            <button class="btn btn-link nav-link" type="submit">
-                                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-                            </button>
-                        </form>
-                    </li>
-                </ul>
+            <div class="navbar-nav ms-auto">
+                <span class="nav-link text-white" th:text="${user.name}">User Name</span>
+                <form th:action="@{/logout}" method="post" class="d-flex">
+                    <button class="btn btn-link nav-link text-white" type="submit">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                    </button>
+                </form>
             </div>
         </div>
     </nav>
 
     <div class="container py-5">
-        <div class="row mb-4">
+        <div class="row mb-4 align-items-center">
             <div class="col-md-6">
-                <h1 class="mb-4">Bienvenido, <span th:text="${user.name}">User</span></h1>
+                <h1 class="display-5 mb-3">Bienvenido, <span th:text="${user.name}" class="text-primary">User</span></h1>
+                <p class="lead text-muted">Gestiona tu tiempo de trabajo de manera eficiente</p>
             </div>
             <div class="col-md-6 text-end">
                 <div class="clock" id="clock" th:text="${currentTime}">00:00:00</div>
@@ -57,13 +83,13 @@
         </div>
 
         <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card status-card h-100">
+            <div class="col-md-12">
+                <div class="card status-card">
                     <div class="card-body">
-                        <h5 class="card-title">Estado Actual</h5>
+                        <h5 class="card-title">Registro de Tiempo</h5>
                         <div th:if="${activeRecord == null}" class="text-center py-4">
-                            <p class="mb-4">No has registrado entrada hoy</p>
-                            <form th:action="@{/timerecord/checkin}" method="post">
+                            <p class="mb-4 text-muted">No has registrado entrada hoy</p>
+                            <form th:action="@{/employee/timerecord/checkin}" method="post">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-clock"></i> Registrar Entrada
                                 </button>
@@ -72,9 +98,9 @@
                         <div th:if="${activeRecord != null}" class="text-center py-4">
                             <p class="mb-4">
                                 Entrada registrada: 
-                                <span th:text="${#temporals.format(activeRecord.startTime, 'HH:mm:ss')}">09:00</span>
+                                <span class="badge bg-success" th:text="${#temporals.format(activeRecord.startTime, 'HH:mm:ss')}">09:00</span>
                             </p>
-                            <form th:action="@{/timerecord/checkout}" method="post">
+                            <form th:action="@{/employee/timerecord/checkout}" method="post">
                                 <button type="submit" class="btn btn-danger btn-lg">
                                     <i class="fas fa-clock"></i> Registrar Salida
                                 </button>
@@ -83,25 +109,28 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-6">
-                <div class="card status-card h-100">
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Estado Personal</h5>
-                        <div class="row text-center g-3">
-                            <div class="col-6">
-                                <div class="p-3 bg-light rounded">
-                                    <i class="fas fa-plane fa-2x text-primary mb-2"></i>
-                                    <p class="mb-0">Vacaciones</p>
-                                    <p class="mb-0" th:text="${user.onVacation ? 'Sí' : 'No'}">No</p>
-                                </div>
+                        <h5 class="card-title">Acciones Rápidas</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a th:href="@{/employee/timerecord/history}" class="btn btn-outline-secondary btn-quick-action w-100">
+                                    <i class="fas fa-history"></i> Historial de Registros
+                                </a>
                             </div>
-                            <div class="col-6">
-                                <div class="p-3 bg-light rounded">
-                                    <i class="fas fa-hospital fa-2x text-danger mb-2"></i>
-                                    <p class="mb-0">Baja Médica</p>
-                                    <p class="mb-0" th:text="${user.onSickLeave ? 'Sí' : 'No'}">No</p>
-                                </div>
+                            <div class="col-md-4">
+                                <a th:href="@{/employee/timerecord/report}" class="btn btn-outline-info btn-quick-action w-100">
+                                    <i class="fas fa-file-alt"></i> Generar Informe Personal
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="#" class="btn btn-outline-primary btn-quick-action w-100" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
+                                    <i class="fas fa-calendar-check"></i> Solicitar Permiso
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -110,7 +139,46 @@
         </div>
     </div>
 
+    <!-- Leave Request Modal -->
+    <div class="modal fade" id="leaveRequestModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Solicitar Permiso</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form th:action="@{/employee/timerecord/leave-request}" method="post">
+                        <div class="mb-3">
+                            <label for="leaveType" class="form-label">Tipo de Permiso</label>
+                            <select class="form-select" id="leaveType" name="leaveType" required>
+                                <option value="">Seleccionar tipo de permiso</option>
+                                <option value="VACATION">Vacaciones</option>
+                                <option value="SICK_LEAVE">Baja Médica</option>
+                                <option value="PERSONAL">Asuntos Personales</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Fecha de Inicio</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Fecha de Fin</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Razón</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/scripts.js"></script>
     <script>
         function updateClock() {
             const clock = document.getElementById('clock');

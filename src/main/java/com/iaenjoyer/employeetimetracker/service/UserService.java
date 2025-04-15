@@ -1,11 +1,11 @@
 package com.iaenjoyer.employeetimetracker.service;
 
-import com.iaenjoyer.employeetimetracker.model.Role;
-import com.iaenjoyer.employeetimetracker.model.User;
-import com.iaenjoyer.employeetimetracker.repository.IncidentRepository;
-import com.iaenjoyer.employeetimetracker.repository.TimeRecordRepository;
-import com.iaenjoyer.employeetimetracker.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,11 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.iaenjoyer.employeetimetracker.model.Role;
+import com.iaenjoyer.employeetimetracker.model.User;
+import com.iaenjoyer.employeetimetracker.repository.TimeRecordRepository;
+import com.iaenjoyer.employeetimetracker.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,6 @@ public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TimeRecordRepository timeRecordRepository;
-    private final IncidentRepository incidentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -166,7 +166,6 @@ public class UserService implements UserDetailsService {
         existingUser.setStatus(updatedUser.getStatus());
         existingUser.setSchedule(updatedUser.getSchedule());
         existingUser.setSupervisor(updatedUser.getSupervisor());
-        existingUser.setTimeTrackingRule(updatedUser.getTimeTrackingRule());
         existingUser.setEmployeeId(updatedUser.getEmployeeId());
         existingUser.setNotes(updatedUser.getNotes());
 
@@ -274,11 +273,6 @@ public class UserService implements UserDetailsService {
         // Verificaciones previas a la eliminación
         if (timeRecordRepository.existsByUser(user)) {
             throw new IllegalArgumentException("No se puede eliminar un usuario con registros de tiempo");
-        }
-
-        if (incidentRepository.existsByReporter(user) || 
-            incidentRepository.existsByAssignee(user)) {
-            throw new IllegalArgumentException("No se puede eliminar un usuario con incidentes asociados");
         }
 
         // Eliminar referencias de supervisión

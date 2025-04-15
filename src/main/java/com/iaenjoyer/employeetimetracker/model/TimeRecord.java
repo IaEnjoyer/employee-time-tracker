@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class TimeRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

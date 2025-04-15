@@ -72,4 +72,12 @@ public class NotificationService {
         alert.put("timestamp", System.currentTimeMillis());
         activeAlerts.add(alert);
     }
+
+    public void sendLeaveRequestNotification(User user, boolean approved) {
+        Map<String, Object> alert = new HashMap<>();
+        alert.put("type", approved ? "LEAVE_REQUEST_APPROVED" : "LEAVE_REQUEST_REJECTED");
+        alert.put("user", user.getName());
+        alert.put("timestamp", System.currentTimeMillis());
+        activeAlerts.add(alert);
+    }
 }

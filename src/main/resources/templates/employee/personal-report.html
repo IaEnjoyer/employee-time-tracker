@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Informe Personal</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4 class="card-title">Informe Personal de Tiempo</h4>
+                </div>
+                <div class="card-body">
+                    <form id="reportFilterForm" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <label for="startDate" class="form-label">Fecha de Inicio</label>
+                                <input type="datetime-local" id="startDate" class="form-control" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="endDate" class="form-label">Fecha de Fin</label>
+                                <input type="datetime-local" id="endDate" class="form-control" required>
+                            </div>
+                            <div class="col-md-2 align-self-end">
+                                <button type="button" id="generateReportButton" class="btn btn-primary w-100">
+                                    <i class="fas fa-file-excel"></i> Generar Informe
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            document.getElementById('generateReportButton').addEventListener('click', function() {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                fetch(`/employee/timerecord/report?start=${startDate}&end=${endDate}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').getAttribute('content')
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Error generando informe');
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `informe_personal_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al generar el informe');
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>

@@ -41,21 +41,6 @@ public class DataInitializer implements CommandLineRunner {
         admin.setHireDate(now);
         userRepository.save(admin);
 
-        // Supervisor
-        User supervisor = new User();
-        supervisor.setUsername("supervisor");
-        supervisor.setPassword(passwordEncoder.encode("supervisor"));
-        supervisor.setEmail("supervisor@company.com");
-        supervisor.setName("Supervisor");
-        supervisor.setRole(Role.SUPERVISOR);
-        supervisor.setStatus(User.UserStatus.ACTIVE);
-        supervisor.setDepartment("Operaciones");
-        supervisor.setDataConsent(true);
-        supervisor.setConsentDate(now);
-        supervisor.setEmployeeId("EMP002");
-        supervisor.setHireDate(now);
-        userRepository.save(supervisor);
-
         // Employee
         User employee = new User();
         employee.setUsername("employee");
@@ -69,22 +54,6 @@ public class DataInitializer implements CommandLineRunner {
         employee.setConsentDate(now);
         employee.setEmployeeId("EMP003");
         employee.setHireDate(now);
-        employee.setSupervisor(supervisor);
         userRepository.save(employee);
-
-        // Auditor
-        User auditor = new User();
-        auditor.setUsername("auditor");
-        auditor.setPassword(passwordEncoder.encode("auditor"));
-        auditor.setEmail("auditor@company.com");
-        auditor.setName("Auditor");
-        auditor.setRole(Role.AUDITOR);
-        auditor.setStatus(User.UserStatus.ACTIVE);
-        auditor.setDepartment("Auditoría");
-        auditor.setDataConsent(true);
-        auditor.setConsentDate(now);
-        auditor.setEmployeeId("EMP004");
-        auditor.setHireDate(now);
-        userRepository.save(auditor);
     }
 }

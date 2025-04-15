@@ -1,12 +1,12 @@
 package com.iaenjoyer.employeetimetracker.controller;
 
-import com.iaenjoyer.employeetimetracker.model.Role;
-import com.iaenjoyer.employeetimetracker.model.User;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+
+import com.iaenjoyer.employeetimetracker.model.Role;
+import com.iaenjoyer.employeetimetracker.model.User;
 
 @Controller
 public class HomeController {

@@ -2,46 +2,69 @@ package com.iaenjoyer.employeetimetracker.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+    private final AccessDeniedHandler accessDeniedHandler;
+
+    public SecurityConfig(AccessDeniedHandler accessDeniedHandler) {
+        this.accessDeniedHandler = accessDeniedHandler;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
+                // Static resources
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                .requestMatchers("/", "/login", "/register", "/h2-console/**").permitAll()
+                
+                // Public routes
+                .requestMatchers("/", "/login", "/register", "/h2-console/**", "/logout").permitAll()
+                
+                // Admin routes
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                
+                // Employee routes
+                .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE", "ADMIN")
+                
+                // Dashboard route
+                .requestMatchers("/dashboard").authenticated()
+                
+                // Secure all other routes
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/")
-                .failureUrl("/login?error")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/login?logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
-                .ignoringRequestMatchers("/admin/**")  // Permitir operaciones POST/DELETE en endpoints admin
+                .ignoringRequestMatchers("/admin/**")  // Allow POST/DELETE in admin endpoints
             )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame
-                    .sameOrigin()
-                )
+            .exceptionHandling(ex -> ex
+                .accessDeniedHandler(accessDeniedHandler)
             );
+            
 
         return http.build();
     }
