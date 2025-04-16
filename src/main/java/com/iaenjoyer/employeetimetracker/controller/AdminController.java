@@ -4,6 +4,8 @@ import com.iaenjoyer.employeetimetracker.model.*;
 import com.iaenjoyer.employeetimetracker.service.*;
 import com.iaenjoyer.employeetimetracker.service.pdf.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -26,12 +29,16 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
     private final UserService userService;
     private final TimeRecordService timeRecordService;
     private final PdfGeneratorService pdfGeneratorService;
     private final NotificationService notificationService;
     private final ScheduleService scheduleService;
     private final ReportGeneratorService reportGeneratorService;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @GetMapping("/dashboard")
@@ -63,11 +70,12 @@ public class AdminController {
     public String createUser(@ModelAttribute User user, Model model) {
         try {
             user.setStatus(User.UserStatus.ACTIVE);
-            user.setConsentDate(LocalDateTime.now());
+            user.setConsentDate(LocalDateTime.now(ZoneOffset.UTC)); // Normalización a UTC
             userService.createUser(user);
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage());
+            logger.warn("Error al crear usuario: {}", e.getMessage());
+            model.addAttribute("error", "Error al crear usuario: " + e.getMessage());
             model.addAttribute("user", user);
             model.addAttribute("roles", Role.values());
             model.addAttribute("schedules", scheduleService.findAll());
@@ -78,13 +86,17 @@ public class AdminController {
     @GetMapping("/users/{id}/edit")
     public String editUserForm(@PathVariable Long id, Model model) {
         try {
-            userService.findById(id).ifPresent(user -> {
-                model.addAttribute("user", user);
-                model.addAttribute("roles", Role.values());
-                model.addAttribute("schedules", scheduleService.findAll());
-            });
+            userService.findById(id).ifPresentOrElse(
+                user -> {
+                    model.addAttribute("user", user);
+                    model.addAttribute("roles", Role.values());
+                    model.addAttribute("schedules", scheduleService.findAll());
+                },
+                () -> logger.error("Usuario no encontrado con ID: {}", id)
+            );
             return "admin/users/form";
         } catch (Exception e) {
+            logger.error("Error al cargar el formulario de edición del usuario: {}", e.getMessage());
             model.addAttribute("error", "Error al cargar el usuario: " + e.getMessage());
             return "redirect:/admin/users";
         }
@@ -96,7 +108,8 @@ public class AdminController {
             userService.updateUser(id, user);
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage());
+            logger.warn("Error al actualizar usuario: {}", e.getMessage());
+            model.addAttribute("error", "Error al actualizar usuario: " + e.getMessage());
             model.addAttribute("user", user);
             model.addAttribute("roles", Role.values());
             model.addAttribute("schedules", scheduleService.findAll());
@@ -104,45 +117,19 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/users/{id}/deactivate")
-    public String deactivateUser(@PathVariable Long id, Model model) {
-        try {
-            userService.deactivateUser(id);
-            return "redirect:/admin/users";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage());
-            return "redirect:/admin/users";
-        }
-    }
-
-    @PostMapping("/users/{id}/activate")
-    public String activateUser(@PathVariable Long id, Model model) {
-        try {
-            userService.activateUser(id);
-            return "redirect:/admin/users";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage());
-            return "redirect:/admin/users";
-        }
-    }
-
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public String deleteUser(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             userService.deleteUser(id);
             redirectAttributes.addFlashAttribute("successMessage", "Usuario eliminado correctamente");
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
-            // Loguear el error para depuración
-            System.err.println("Error al eliminar usuario: " + e.getMessage());
-            
-            // Añadir mensaje de error específico
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            logger.error("Error al eliminar usuario: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar usuario: " + e.getMessage());
             return "redirect:/admin/users";
         } catch (Exception e) {
-            // Capturar cualquier otra excepción inesperada
-            System.err.println("Error inesperado al eliminar usuario: " + e.getMessage());
+            logger.error("Error inesperado al eliminar usuario: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", "Error inesperado al eliminar usuario");
             return "redirect:/admin/users";
         }
@@ -153,39 +140,14 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             Model model) {
-        
         List<TimeRecord> records;
         if (start != null && end != null) {
             records = timeRecordService.findByDateRange(start, end);
         } else {
             records = timeRecordService.findRecentRecords();
         }
-        
         model.addAttribute("timeRecords", records);
         return "admin/time-records/list";
-    }
-
-    @PostMapping("/time-records/{id}/approve")
-    public ResponseEntity<?> approveTimeRecord(@PathVariable Long id) {
-        try {
-            TimeRecord record = timeRecordService.approveTimeRecord(id);
-            return ResponseEntity.ok(record);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al aprobar registro: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/time-records/{id}/reject")
-    public ResponseEntity<?> rejectTimeRecord(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-        try {
-            String reason = request.get("reason");
-            TimeRecord record = timeRecordService.rejectTimeRecord(id, reason);
-            return ResponseEntity.ok(record);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al rechazar registro: " + e.getMessage());
-        }
     }
 
     @GetMapping("/reports")
@@ -198,12 +160,15 @@ public class AdminController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             Model model) {
-        
         try {
+            if (start.isAfter(end)) {
+                throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin");
+            }
             Map<String, Object> reportData = reportGeneratorService.generateGeneralReport(start, end);
             model.addAttribute("reportData", reportData);
             return "admin/reports/preview";
         } catch (Exception e) {
+            logger.error("Error al generar la vista previa del reporte: {}", e.getMessage());
             model.addAttribute("error", "Error al generar la vista previa: " + e.getMessage());
             return "admin/reports/form";
         }
@@ -214,13 +179,13 @@ public class AdminController {
             @PathVariable String format,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        
         try {
+            if (start.isAfter(end)) {
+                throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin");
+            }
             Map<String, Object> reportData = reportGeneratorService.generateGeneralReport(start, end);
             List<TimeRecord> records = (List<TimeRecord>) reportData.get("records");
-
             String filename = String.format("reporte_general_%s", start.format(DATE_FORMATTER));
-
             byte[] report;
             if ("pdf".equals(format)) {
                 report = reportGeneratorService.generateGeneralReportPdf(start, end);
@@ -235,18 +200,12 @@ public class AdminController {
                         .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                         .body(report);
             } else {
-                return ResponseEntity.badRequest().body("Formato de reporte no válido");
+                return ResponseEntity.badRequest().body("Formato de reporte no válido. Formatos permitidos: pdf, excel");
             }
         } catch (Exception e) {
+            logger.error("Error al exportar el reporte: {}", e.getMessage());
             return ResponseEntity.internalServerError().body("Error al generar el reporte: " + e.getMessage());
         }
-    }
-
-    @GetMapping("/notifications/settings")
-    public String notificationSettings(Model model) {
-        model.addAttribute("settings", notificationService.getSettings());
-        model.addAttribute("alerts", notificationService.getActiveAlerts());
-        return "admin/notifications/settings";
     }
 
     @PostMapping("/notifications/settings")
@@ -255,6 +214,7 @@ public class AdminController {
             notificationService.updateSettings(settings);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
+            logger.error("Error al actualizar configuración de notificaciones: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Error al actualizar configuración: " + e.getMessage());
         }
     }

@@ -34,14 +34,12 @@
                             </div>
                         </div>
 
+                        <!-- Mensajes de Error -->
+                        <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+
                         <!-- Botones -->
                         <div class="row mt-4">
                             <div class="col-12">
-                                <!-- Vista Previa -->
-                                <button type="button" class="btn btn-primary mr-2" id="generateBtn">
-                                    <i class="fas fa-eye"></i> Vista Previa
-                                </button>
-
                                 <!-- Descargar PDF -->
                                 <button type="button" class="btn btn-success mr-2" id="downloadPdfBtn">
                                     <i class="fas fa-file-pdf"></i> Descargar PDF
@@ -56,131 +54,9 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Vista Previa -->
-            <div id="previewCard" class="card shadow mb-4" style="display: none;">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Vista Previa del Reporte</h6>
-                </div>
-                <div class="card-body" id="previewContent">
-                    <!-- Contenido dinámico -->
-                </div>
-            </div>
         </div>
     </div>
 
-    <th:block layout:fragment="scripts">
-        <script th:inline="javascript">
-            document.addEventListener('DOMContentLoaded', function() {
-                // 1. Configuración inicial con depuración
-                console.log("Script cargado - Iniciando configuración");
-                const generateBtn = document.getElementById('generateBtn');
-                const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-                const downloadExcelBtn = document.getElementById('downloadExcelBtn');
-                const reportForm = document.getElementById('reportForm');
-
-                // 2. Función mejorada para conversión de fechas
-                function toBackendDateFormat(dateString) {
-                    if (!dateString) {
-                        console.error("Fecha vacía recibida");
-                        return '';
-                    }
-                    
-                    try {
-                        // Ajuste para el formato esperado por Spring (ISO_LOCAL_DATE_TIME)
-                        const date = new Date(dateString);
-                        const pad = num => num.toString().padStart(2, '0');
-                        
-                        const year = date.getFullYear();
-                        const month = pad(date.getMonth() + 1);
-                        const day = pad(date.getDate());
-                        const hours = pad(date.getHours());
-                        const minutes = pad(date.getMinutes());
-                        
-                        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:00`;
-                        console.log("Fecha formateada:", formattedDate);
-                        return formattedDate;
-                    } catch (e) {
-                        console.error("Error formateando fecha:", e);
-                        return '';
-                    }
-                }
-
-                // 3. Función para construir URL con parámetros
-                function buildUrl(basePath, action, params) {
-                    const url = new URL(`${window.location.origin}${basePath}/${action}`);
-                    
-                    Object.keys(params).forEach(key => {
-                        if (params[key]) {
-                            url.searchParams.append(key, params[key]);
-                        }
-                    });
-                    
-                    console.log("URL construida:", url.toString());
-                    return url.toString();
-                }
-
-                // 4. Manejador de eventos mejorado
-                function setupButtonHandler(button, action) {
-                    button.addEventListener('click', function() {
-                        console.log(`Botón ${action} clickeado`);
-                        
-                        if (!reportForm.checkValidity()) {
-                            console.warn("Validación de formulario fallida");
-                            reportForm.reportValidity();
-                            return;
-                        }
-                        
-                        const start = document.getElementById('start').value;
-                        const end = document.getElementById('end').value;
-                        
-                        if (!start || !end) {
-                            console.error("Fechas no proporcionadas");
-                            alert("Por favor complete ambas fechas");
-                            return;
-                        }
-                        
-                        const params = {
-                            start: toBackendDateFormat(start),
-                            end: toBackendDateFormat(end)
-                        };
-                        
-                        console.log("Parámetros a enviar:", params);
-                        
-                        if (!params.start || !params.end) {
-                            console.error("Error en formato de fechas");
-                            alert("Formato de fecha inválido");
-                            return;
-                        }
-                        
-                        if (new Date(params.start) > new Date(params.end)) {
-                            console.warn("Fecha inicio mayor que fecha fin");
-                            alert("La fecha de inicio no puede ser posterior a la fecha de fin");
-                            return;
-                        }
-                        
-                        const baseUrl = /*[[@{/admin/reports}]]*/ '/admin/reports';
-                        const url = buildUrl(baseUrl, action, params);
-                        
-                        console.log("Redirigiendo a:", url);
-                        window.location.href = url;
-                    });
-                }
-
-                // 5. Configurar los botones
-                setupButtonHandler(generateBtn, 'preview');
-                setupButtonHandler(downloadPdfBtn, 'export/pdf');
-                setupButtonHandler(downloadExcelBtn, 'export/excel');
-
-                // 6. Depuración de parámetros de URL
-                console.log("Parámetros actuales de URL:", window.location.search);
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('error')) {
-                    console.error("Error recibido del backend:", urlParams.get('error'));
-                    alert(`Error: ${urlParams.get('error')}`);
-                }
-            });
-        </script>
-    </th:block>
+    
 </body>
 </html>

@@ -14,16 +14,8 @@ public class HomeController {
     @GetMapping("/")
     public String home() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            return "redirect:/login";
-        }
-
-        User user = (User) auth.getPrincipal();
-        if (Role.ADMIN.equals(user.getRole())) {
-            return "redirect:/admin/dashboard";
-        }
-
-        return "redirect:/dashboard";
+        System.out.println("Redirigiendo a /dashboard");
+        return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/login")

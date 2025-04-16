@@ -78,6 +78,95 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
-    <script th:src="@{/js/scripts.js}"></script>
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                const generateBtn = document.getElementById('generateBtn');
+                const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+                const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+                const reportForm = document.getElementById('reportForm');
+                const errorContainer = document.getElementById('errorContainer');
+
+                // Función para mostrar mensajes de error
+                function showError(message) {
+                    errorContainer.textContent = message;
+                    errorContainer.style.display = 'block';
+                }
+
+                // Función para ocultar mensajes de error
+                function hideError() {
+                    errorContainer.style.display = 'none';
+                }
+
+                // Función para formatear fechas
+                function toBackendDateFormat(dateString) {
+                    if (!dateString) {
+                        console.error("Fecha vacía recibida");
+                        return '';
+                    }
+
+                    try {
+                        const date = new Date(dateString);
+                        const year = date.getFullYear();
+                        const month = ('0' + (date.getMonth() + 1)).slice(-2);
+                        const day = ('0' + date.getDate()).slice(-2);
+                        const hours = ('0' + date.getHours()).slice(-2);
+                        const minutes = ('0' + date.getMinutes()).slice(-2);
+
+                        return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+                    } catch (e) {
+                        console.error("Error formateando fecha:", e);
+                        return '';
+                    }
+                }
+
+                // Función para construir URL con parámetros
+                function buildUrl(basePath, action, params) {
+                    const url = new URL(`${window.location.origin}${basePath}/${action}`);
+
+                    Object.keys(params).forEach(key => {
+                        if (params[key]) {
+                            url.searchParams.append(key, params[key]);
+                        }
+                    });
+
+                    console.log("URL construida:", url.toString());
+                    return url.toString();
+                }
+
+                // Función para descargar archivos
+                async function downloadFile(format) {
+                    const start = document.getElementById('start').value;
+                    const end = document.getElementById('end').value;
+                    const params = { start: toBackendDateFormat(start), end: toBackendDateFormat(end) };
+
+                    try {
+                        const response = await fetch(buildUrl('/admin/reports', `export/${format}`, params));
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `reporte_general.${format}`;
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                        } else {
+                            const error = await response.text();
+                            showError(`Error: ${error}`);
+                        }
+                    } catch (error) {
+                        console.error("Error al descargar el archivo:", error);
+                        showError("Ocurrió un error al descargar el archivo");
+                    }
+                }
+
+                // Manejador de eventos para el botón "Descargar PDF"
+                downloadPdfBtn.addEventListener('click', () => downloadFile('pdf'));
+
+                // Manejador de eventos para el botón "Descargar Excel"
+                downloadExcelBtn.addEventListener('click', () => downloadFile('excel'));
+            });
+        </script>
+    </th:block>
 </body>
 </html>
