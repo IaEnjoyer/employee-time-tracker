@@ -32,7 +32,7 @@ public class SecurityConfig {
             .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
             
             // Public routes
-            .requestMatchers("/", "/login", "/register", "/h2-console/**", "/logout").permitAll()
+            .requestMatchers("/", "/login", "/register", "/logout").permitAll()
             
             // Admin routes
             .requestMatchers("/admin/**").hasRole("ADMIN")
