@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -25,6 +26,18 @@ public class DashboardController {
         model.addAttribute("activeRecord", activeRecord.orElse(null));
         model.addAttribute("user", userService.getUser(user.getId())); 
         model.addAttribute("today", LocalDateTime.now());
+        Duration totalWorked = timeRecordService.getTotalWorkedToday(user);
+        model.addAttribute("totalWorkedSeconds", totalWorked.getSeconds());
         return "dashboard";
+    }
+    @GetMapping("/dashboard/status")
+    public String getStatusCard(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("user", user);
+        model.addAttribute("activeRecord", timeRecordService.findActiveRecord(user).orElse(null));
+        
+        Duration totalWorked = timeRecordService.getTotalWorkedToday(user);
+        model.addAttribute("totalWorkedSeconds", totalWorked.getSeconds());
+    
+        return "dashboard/fragments/timerecord :: status-card";
     }
 }

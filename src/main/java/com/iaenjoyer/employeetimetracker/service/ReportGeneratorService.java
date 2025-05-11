@@ -16,7 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,30 +38,26 @@ public class ReportGeneratorService {
 
         double totalHours = calculateTotalHours(records, start, end);
         double averageHours = calculateAverageHoursPerUser(records, allUsers.size(), start, end);
-        Map<String, Double> departmentStats = calculateDepartmentStats(records);
 
         report.put("totalHours", totalHours);
         report.put("averageHours", averageHours);
-        report.put("departmentStats", departmentStats);
         
         return report;
     }
 
     @Transactional(readOnly = true)
     public byte[] generateGeneralReportPdf(LocalDateTime start, LocalDateTime end) {
-        Map<String, Object> reportData = generateGeneralReport(start, end);
-        List<TimeRecord> records = (List<TimeRecord>) reportData.get("records");
-        return pdfGeneratorService.generateReport("General", null, start, end, records);
+        return timeRecordService.generateReport(start, end);
     }
 
     @Transactional(readOnly = true)
     public byte[] generateGeneralReportExcel(LocalDateTime start, LocalDateTime end) {
         Map<String, Object> reportData = generateGeneralReport(start, end);
         List<TimeRecord> records = (List<TimeRecord>) reportData.get("records");
-        return generateExcelReport("General", null, start, end, records);
+        return generateExcelReport(start, end, records);
     }
 
-    private byte[] generateExcelReport(String type, String department, LocalDateTime start, LocalDateTime end, List<TimeRecord> records) {
+    private byte[] generateExcelReport(LocalDateTime start, LocalDateTime end, List<TimeRecord> records) {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Reporte de Tiempo");
             
@@ -72,7 +67,7 @@ public class ReportGeneratorService {
             
             // Headers
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"Fecha de Inicio", "Fecha de Fin", "Horas", "Estado", "Notas"};
+            String[] headers = {"Fecha de Inicio", "Fecha de Fin", "Horas"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -87,8 +82,6 @@ public class ReportGeneratorService {
                 row.createCell(0).setCellValue(record.getStartTime().format(DATE_FORMATTER));
                 row.createCell(1).setCellValue(record.getEndTime() != null ? record.getEndTime().format(DATE_FORMATTER) : "En curso");
                 row.createCell(2).setCellValue(String.format("%.2f", record.getHours()));
-                row.createCell(3).setCellValue(record.getStatus().toString());
-                row.createCell(4).setCellValue(record.getNotes() != null ? record.getNotes() : "Sin notas");
             }
 
             // Auto-ajustar columnas
@@ -132,8 +125,7 @@ public class ReportGeneratorService {
 
     private double calculateTotalHours(List<TimeRecord> records, LocalDateTime start, LocalDateTime end) {
         return records.stream()
-                .filter(r -> r.getStartTime().isAfter(start) && r.getEndTime().isBefore(end) 
-                        && r.getStatus() == TimeRecord.Status.APPROVED)
+                .filter(r -> r.getStartTime().isAfter(start) && r.getEndTime().isBefore(end) )
                 .mapToDouble(r -> Duration.between(r.getStartTime(), r.getEndTime()).toHours())
                 .sum();
     }
@@ -141,14 +133,5 @@ public class ReportGeneratorService {
     private double calculateAverageHoursPerUser(List<TimeRecord> records, int totalUsers, LocalDateTime start, LocalDateTime end) {
         if (totalUsers == 0) return 0;
         return calculateTotalHours(records, start, end) / totalUsers;
-    }
-
-    private Map<String, Double> calculateDepartmentStats(List<TimeRecord> records) {
-        return records.stream()
-                .filter(r -> r.getStatus() == TimeRecord.Status.APPROVED)
-                .collect(Collectors.groupingBy(
-                        r -> r.getUser().getDepartment(),
-                        Collectors.summingDouble(r -> Duration.between(r.getStartTime(), r.getEndTime()).toHours())
-                ));
     }
 }

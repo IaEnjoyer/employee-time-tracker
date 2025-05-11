@@ -1,43 +1,40 @@
 package com.iaenjoyer.employeetimetracker.service;
 
+import java.util.Map;
+
 import com.iaenjoyer.employeetimetracker.model.TimeRecord;
 import com.iaenjoyer.employeetimetracker.model.User;
+import com.iaenjoyer.employeetimetracker.report.dto.FichajeDetalleDTO;
+import com.iaenjoyer.employeetimetracker.report.dto.FichajeDiaDTO;
+import com.iaenjoyer.employeetimetracker.report.dto.InformeFichajeDTO;
+import com.iaenjoyer.employeetimetracker.report.dto.RegistroFichajeDTO;
+import com.iaenjoyer.employeetimetracker.report.service.JasperFichajesService;
 import com.iaenjoyer.employeetimetracker.repository.TimeRecordRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import com.itextpdf.text.BaseColor;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Element;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Phrase;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TimeRecordService {
     private static final int RECENT_RECORDS_LIMIT = 10;
-    
+
     private final TimeRecordRepository timeRecordRepository;
     private final UserService userService;
-    private final NotificationService notificationService;
+    private final JasperFichajesService jasperFichajesService;
     private static final Logger log = Logger.getLogger(TimeRecordService.class.getName());
 
     @Transactional(readOnly = true)
@@ -78,45 +75,21 @@ public class TimeRecordService {
     }
 
     @Transactional
-    public TimeRecord approveTimeRecord(Long id) {
-        TimeRecord record = timeRecordRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado"));
-        
-        record.setStatus(TimeRecord.Status.APPROVED);
-        notificationService.sendApprovalNotification(record.getUser());
-        return timeRecordRepository.save(record);
-    }
-
-    @Transactional
-    public TimeRecord rejectTimeRecord(Long id, String reason) {
-        if (reason == null || reason.trim().isEmpty()) {
-            throw new IllegalArgumentException("Se requiere una razón para el rechazo");
-        }
-
-        TimeRecord record = timeRecordRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado"));
-        
-        record.setStatus(TimeRecord.Status.REJECTED);
-        record.setRejectionReason(reason);
-        notificationService.sendRejectionNotification(record.getUser(), reason);
-        return timeRecordRepository.save(record);
-    }
-
-    @Transactional
-    public TimeRecord startTimeRecord(User user) {
+    public TimeRecord startTimeRecord(User user, String ipAddress, String deviceInfo) {
         // Verify if an active record already exists
         if (hasActiveTimeRecord(user)) {
             // Instead of throwing an exception, end the existing record and start a new one
             TimeRecord existingRecord = findActiveRecord(user).get();
             existingRecord.setEndTime(LocalDateTime.now());
-            existingRecord.setStatus(TimeRecord.Status.PENDING);
-            timeRecordRepository.save(existingRecord);
+            return timeRecordRepository.save(existingRecord);
         }
 
         TimeRecord record = new TimeRecord();
         record.setUser(user);
         record.setStartTime(LocalDateTime.now());
-        record.setStatus(TimeRecord.Status.PENDING);
+        record.setIp(ipAddress);
+        record.setHours(0d);
+        record.setDispositivo(deviceInfo); // Campo nuevo
         return timeRecordRepository.save(record);
     }
 
@@ -129,71 +102,214 @@ public class TimeRecordService {
 
         TimeRecord record = activeRecord.get();
         record.setEndTime(LocalDateTime.now());
-        record.setStatus(TimeRecord.Status.PENDING);
         return timeRecordRepository.save(record);
+    }
+
+    private List<RegistroFichajeDTO> convertirAregistroFichajeDTO(Map<YearMonth, Map<Integer, List<TimeRecord>>> registrosFichajes) {
+        List<RegistroFichajeDTO> registros = new ArrayList<>();
+
+        for (Map.Entry<YearMonth, Map<Integer, List<TimeRecord>>> entryYearMonth : registrosFichajes.entrySet()) {
+            YearMonth yearMonth = entryYearMonth.getKey();
+            Map<Integer, List<TimeRecord>> dayGroup = entryYearMonth.getValue();
+
+            RegistroFichajeDTO registroMes = new RegistroFichajeDTO();
+            registroMes.setMes(yearMonth.getMonthValue());
+            registroMes.setAnio(yearMonth.getYear());
+
+            double totalEstablecidas = dayGroup.values().stream()
+                    .flatMap(List::stream)
+                    .mapToDouble(r -> r.getHours())
+                    .sum();
+
+            double totalOrdinarias = dayGroup.values().size()*8;
+
+            registroMes.setTotalEstablecidas(totalEstablecidas);
+            registroMes.setTotalOrdinarias(totalOrdinarias);
+
+            List<FichajeDiaDTO> dias = new ArrayList<>();
+
+            for (Map.Entry<Integer, List<TimeRecord>> entryDay : dayGroup.entrySet()) {
+                int dia = entryDay.getKey();
+                List<TimeRecord> recordsOfDay = entryDay.getValue();
+
+                FichajeDiaDTO fichajeDia = new FichajeDiaDTO();
+                fichajeDia.setDia(dia);
+
+                List<FichajeDetalleDTO> detalles = new ArrayList<>();
+
+                for (TimeRecord record : recordsOfDay) {
+                    // Entrada
+                    if (record.getStartTime() != null) {
+                        detalles.add(new FichajeDetalleDTO(
+                                record.getId(),
+                                "entrada",
+                                record.getStartTime(),
+                                record.getIp(),
+                                record.getDispositivo()));
+                    }
+
+                    // Salida
+                    if (record.getEndTime() != null) {
+                        detalles.add(new FichajeDetalleDTO(
+                                record.getId(),
+                                "salida",
+                                record.getEndTime(),
+                                record.getIp(),
+                                record.getDispositivo()));
+                    }
+                }
+
+                fichajeDia.setFichajeDetalleDTOs(detalles);
+                dias.add(fichajeDia);
+            }
+
+            registroMes.setFichajesDia(dias);
+            registros.add(registroMes);
+        }
+        return registros;
+    }
+
+    public List<InformeFichajeDTO> convertToInformeFichajeDTO(List<TimeRecord> timeRecords) {
+        if (timeRecords == null || timeRecords.isEmpty()) {
+            return Collections.emptyList();
+        }
+    
+        // Agrupar por usuario
+        Map<User, List<TimeRecord>> recordsByUser = timeRecords.stream()
+            .collect(Collectors.groupingBy(TimeRecord::getUser));
+    
+        List<InformeFichajeDTO> informes = new ArrayList<>();
+    
+        for (Map.Entry<User, List<TimeRecord>> entry : recordsByUser.entrySet()) {
+            User user = entry.getKey();
+            List<TimeRecord> recordsForUser = entry.getValue();
+    
+            InformeFichajeDTO informe = new InformeFichajeDTO();
+            informe.setNombreTrabajador(user.getName());
+            informe.setNif(user.getNif());
+    
+            // Agrupar por mes/anio
+            Map<String, List<TimeRecord>> recordsByMonthYear = recordsForUser.stream()
+                .filter(r -> r.getStartTime() != null)
+                .collect(Collectors.groupingBy(record ->
+                    record.getStartTime().getMonthValue() + "-" + record.getStartTime().getYear()
+                ));
+    
+            List<RegistroFichajeDTO> registros = new ArrayList<>();
+    
+            for (Map.Entry<String, List<TimeRecord>> monthEntry : recordsByMonthYear.entrySet()) {
+                String[] parts = monthEntry.getKey().split("-");
+                int mes = Integer.parseInt(parts[0]);
+                int anio = Integer.parseInt(parts[1]);
+    
+                RegistroFichajeDTO registro = new RegistroFichajeDTO();
+                registro.setMes(mes);
+                registro.setAnio(anio);
+    
+                // Agrupar por día
+                Map<Integer, List<TimeRecord>> recordsByDay = monthEntry.getValue().stream()
+                    .collect(Collectors.groupingBy(record ->
+                        record.getStartTime().getDayOfMonth()
+                    ));
+    
+                List<FichajeDiaDTO> dias = new ArrayList<>();
+    
+                for (Map.Entry<Integer, List<TimeRecord>> dayEntry : recordsByDay.entrySet()) {
+                    FichajeDiaDTO fichajeDia = new FichajeDiaDTO();
+                    fichajeDia.setDia(dayEntry.getKey());
+    
+                    List<FichajeDetalleDTO> detalles = new ArrayList<>();
+    
+                    for (TimeRecord record : dayEntry.getValue()) {
+                        // Entrada
+                        if (record.getStartTime() != null) {
+                            detalles.add(new FichajeDetalleDTO(
+                                record.getId(),
+                                "entrada",
+                                record.getStartTime(),
+                                record.getIp(),
+                                record.getDispositivo()
+                            ));
+                        }
+    
+                        // Salida
+                        if (record.getEndTime() != null) {
+                            detalles.add(new FichajeDetalleDTO(
+                                record.getId(),
+                                "salida",
+                                record.getEndTime(),
+                                record.getIp(),
+                                record.getDispositivo()
+                            ));
+                        }
+                    }
+    
+                    fichajeDia.setFichajeDetalleDTOs(detalles);
+                    dias.add(fichajeDia);
+                }
+    
+                registro.setFichajesDia(dias);
+    
+                // Calcular totales (puedes ajustar esta lógica según tus reglas)
+                double totalEstablecidas = dias.size() * 8.0; // Ejemplo simple
+                double totalOrdinarias = dias.size() * 8.0;
+    
+                registro.setTotalEstablecidas(totalEstablecidas);
+                registro.setTotalOrdinarias(totalOrdinarias);
+    
+                registros.add(registro);
+            }
+    
+            informe.setListaRegistros(registros);
+            informes.add(informe);
+        }
+    
+        return informes;
     }
 
     public byte[] generateReport(User user, LocalDateTime start, LocalDateTime end) {
         List<TimeRecord> records = findByUserAndStartTimeBetween(user, start, end);
-        
+
         try {
-            Document document = new Document(PageSize.A4);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter.getInstance(document, baos);
+
+            List<InformeFichajeDTO> informesFichajeDTO = convertToInformeFichajeDTO(records);
             
-            document.open();
-            
-            // Add title
-            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
-            Paragraph title = new Paragraph("Reporte de Tiempo", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            document.add(title);
-            document.add(new Paragraph("\n"));
-            
-            // Add user info
-            document.add(new Paragraph("Usuario: " + user.getUsername()));
-            document.add(new Paragraph("Período: " + start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + 
-                                    " - " + end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
-            document.add(new Paragraph("\n"));
-            
-            // Create table
-            PdfPTable table = new PdfPTable(5);
-            table.setWidthPercentage(100);
-            
-            // Add headers
-            Stream.of("Fecha de Inicio", "Fecha de Fin", "Horas", "Estado", "Notas")
-                .forEach(columnTitle -> {
-                    PdfPCell header = new PdfPCell();
-                    header.setBackgroundColor(BaseColor.LIGHT_GRAY);
-                    header.setBorderWidth(2);
-                    header.setPhrase(new Phrase(columnTitle));
-                    table.addCell(header);
-                });
-            
-            // Add records
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            for (TimeRecord record : records) {
-                table.addCell(record.getStartTime().format(formatter));
-                table.addCell(record.getEndTime() != null ? record.getEndTime().format(formatter) : "En curso");
-                table.addCell(String.format("%.2f", record.getHours()));
-                table.addCell(record.getStatus().toString());
-                table.addCell(record.getNotes() != null ? record.getNotes() : "Sin notas");
-            }
-            
-            document.add(table);
-            document.add(new Paragraph("\n"));
-            
-            // Add summary
-            double totalHours = records.stream().mapToDouble(TimeRecord::getHours).sum();
-            document.add(new Paragraph("Total de Registros: " + records.size()));
-            document.add(new Paragraph("Total de Horas: " + String.format("%.2f", totalHours)));
-            
-            document.close();
-            
-            return baos.toByteArray();
+            return jasperFichajesService.generarRerporteFichaje(informesFichajeDTO);
         } catch (Exception e) {
             log.severe("Error generating PDF report: " + e.getMessage());
             throw new RuntimeException("Error generating PDF report", e);
         }
+    }
+
+    public byte[] generateReport(LocalDateTime start, LocalDateTime end) {
+        List<TimeRecord> records = findByDateRange(start, end);
+
+        try {
+
+            List<InformeFichajeDTO> informesFichajeDTO = convertToInformeFichajeDTO(records);
+            
+            return jasperFichajesService.generarRerporteFichaje(informesFichajeDTO);
+        } catch (Exception e) {
+            log.severe("Error generating PDF report: " + e.getMessage());
+            throw new RuntimeException("Error generating PDF report", e);
+        }
+    }
+
+    public Duration getTotalWorkedToday(User user) {
+        List<TimeRecord> records = timeRecordRepository.findByUserAndStartTimeBetween(
+                user,
+                LocalDateTime.now().with(LocalTime.MIN),
+                LocalDateTime.now());
+
+        Duration total = Duration.ZERO;
+
+        for (TimeRecord record : records) {
+            if (record.getStartTime() != null) {
+                LocalDateTime end = record.getEndTime() != null ? record.getEndTime() : LocalDateTime.now();
+                total = total.plus(Duration.between(record.getStartTime(), end));
+            }
+        }
+
+        return total;
     }
 }

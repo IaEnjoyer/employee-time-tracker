@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Employee Time Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Sistema de Fichajes</title>
+
+    <!-- CSRF Tokens -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
+    <!-- Estilos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <style>
         body {
             background-color: #f4f6f9;
             font-family: 'Arial', sans-serif;
         }
+
         .clock {
             font-size: 2.5rem;
             font-weight: bold;
@@ -20,25 +27,30 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
         .status-card {
             border-radius: 15px;
             box-shadow: 0 6px 12px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
             border: none;
         }
+
         .status-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.15);
         }
+
         .navbar {
             background: linear-gradient(to right, #0d6efd, #4a90e2);
         }
+
         .card-title {
             color: #2c3e50;
             font-weight: 600;
             border-bottom: 2px solid #0d6efd;
             padding-bottom: 10px;
         }
+
         .btn-quick-action {
             display: flex;
             align-items: center;
@@ -48,147 +60,310 @@
             border-radius: 10px;
             transition: all 0.3s ease;
         }
+
         .btn-quick-action:hover {
             transform: scale(1.05);
         }
+
         .btn-quick-action i {
             font-size: 1.2rem;
         }
     </style>
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="#" th:text="${companyName}">Company Name</a>
-            <div class="navbar-nav ms-auto">
-                <span class="nav-link text-white" th:text="${user.name}">User Name</span>
-                <form th:action="@{/logout}" method="post" class="d-flex">
-                    <button class="btn btn-link nav-link text-white" type="submit">
-                        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-                    </button>
+
+<!-- Navegación -->
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="#" th:text="${companyName}">Company Name</a>
+        <div class="navbar-nav ms-auto">
+            <span class="nav-link text-white" th:text="${user.name}">User Name</span>
+            <form th:action="@{/logout}" method="post" class="d-flex">
+                <button class="btn btn-link nav-link text-white" type="submit">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Contenido principal -->
+<div class="container py-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h1 class="display-5 mb-3">Bienvenido, <span th:text="${user.name}" class="text-primary">User</span></h1>
+            <p class="lead text-muted">Gestiona tu tiempo de trabajo de manera eficiente</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="clock" id="clock" th:text="${currentTime}">00:00:00</div>
+        </div>
+    </div>
+
+    <!-- Mensaje dinámico -->
+    <div id="statusMessage" class="alert d-none mb-4" role="alert"></div>
+
+    <!-- Contador de tiempo trabajado -->
+    <div class="text-center mt-3">
+        <h6>Tiempo trabajado hoy:</h6>
+        <div id="timer" class="clock" style="font-size: 2rem; padding: 5px 15px;">
+            00:00:00
+        </div>
+    </div>
+
+    <!-- Mensaje límite de 8 horas -->
+    <div id="timeLimitMessage" class="alert alert-success d-none mt-3" role="alert">
+        Has alcanzado las <strong>8 horas diarias</strong>. Ya no puedes fichar más hoy.
+    </div>
+
+    <!-- Contenedor del estado -->
+    <div class="row g-4 mt-4">
+        <div class="col-md-12">
+            <div id="statusCardContainer">
+                <div th:replace="~{ dashboard/fragments/timerecord :: status-card }"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Acciones Rápidas</h5>
+                    <div class="row g-3">
+                        <!-- <div class="col-md-4">
+                            <a th:href="@{/employee/timerecord/history}" class="btn btn-outline-secondary btn-quick-action w-100">
+                                <i class="fas fa-history"></i> Historial de Registros
+                            </a>
+                        </div>-->
+                        <div class="col-md-12">
+                            <a th:href="@{/employee/timerecord/report}" class="btn btn-outline-info btn-quick-action w-100">
+                                <i class="fas fa-file-alt"></i> Generar Informe Personal
+                            </a>
+                        </div>
+                        <!-- <div class="col-md-4">
+                            <a href="#" class="btn btn-outline-primary btn-quick-action w-100" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
+                                <i class="fas fa-calendar-check"></i> Solicitar Permiso
+                            </a>
+                        </div>                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Solicitar Permiso -->
+<div class="modal fade" id="leaveRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Solicitar Permiso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/employee/timerecord/leave-request}" method="post">
+                    <div class="mb-3">
+                        <label for="leaveType" class="form-label">Tipo de Permiso</label>
+                        <select class="form-select" id="leaveType" name="leaveType" required>
+                            <option value="">Seleccionar tipo de permiso</option>
+                            <option value="VACATION">Vacaciones</option>
+                            <option value="SICK_LEAVE">Baja Médica</option>
+                            <option value="PERSONAL">Asuntos Personales</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">Fecha de Fin</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Razón</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
                 </form>
             </div>
         </div>
-    </nav>
-
-    <div class="container py-5">
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
-                <h1 class="display-5 mb-3">Bienvenido, <span th:text="${user.name}" class="text-primary">User</span></h1>
-                <p class="lead text-muted">Gestiona tu tiempo de trabajo de manera eficiente</p>
-            </div>
-            <div class="col-md-6 text-end">
-                <div class="clock" id="clock" th:text="${currentTime}">00:00:00</div>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-12">
-                <div class="card status-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Registro de Tiempo</h5>
-                        <div th:if="${activeRecord == null}" class="text-center py-4">
-                            <p class="mb-4 text-muted">No has registrado entrada hoy</p>
-                            <form th:action="@{/employee/timerecord/checkin}" method="post">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-clock"></i> Registrar Entrada
-                                </button>
-                            </form>
-                        </div>
-                        <div th:if="${activeRecord != null}" class="text-center py-4">
-                            <p class="mb-4">
-                                Entrada registrada: 
-                                <span class="badge bg-success" th:text="${#temporals.format(activeRecord.startTime, 'HH:mm:ss')}">09:00</span>
-                            </p>
-                            <form th:action="@{/employee/timerecord/checkout}" method="post">
-                                <button type="submit" class="btn btn-danger btn-lg">
-                                    <i class="fas fa-clock"></i> Registrar Salida
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Acciones Rápidas</h5>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <a th:href="@{/employee/timerecord/history}" class="btn btn-outline-secondary btn-quick-action w-100">
-                                    <i class="fas fa-history"></i> Historial de Registros
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a th:href="@{/employee/timerecord/report}" class="btn btn-outline-info btn-quick-action w-100">
-                                    <i class="fas fa-file-alt"></i> Generar Informe Personal
-                                </a>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="#" class="btn btn-outline-primary btn-quick-action w-100" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
-                                    <i class="fas fa-calendar-check"></i> Solicitar Permiso
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 
-    <!-- Leave Request Modal -->
-    <div class="modal fade" id="leaveRequestModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Solicitar Permiso</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form th:action="@{/employee/timerecord/leave-request}" method="post">
-                        <div class="mb-3">
-                            <label for="leaveType" class="form-label">Tipo de Permiso</label>
-                            <select class="form-select" id="leaveType" name="leaveType" required>
-                                <option value="">Seleccionar tipo de permiso</option>
-                                <option value="VACATION">Vacaciones</option>
-                                <option value="SICK_LEAVE">Baja Médica</option>
-                                <option value="PERSONAL">Asuntos Personales</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="startDate" class="form-label">Fecha de Inicio</label>
-                            <input type="date" class="form-control" id="startDate" name="startDate" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="endDate" class="form-label">Fecha de Fin</label>
-                            <input type="date" class="form-control" id="endDate" name="endDate" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="reason" class="form-label">Razón</label>
-                            <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap @5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let timerInterval = null;
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    // Reloj en vivo
+    function updateClock() {
+        const clock = document.getElementById('clock');
+        const now = new Date();
+        const time = now.toLocaleTimeString('es-ES');
+        clock.textContent = time;
+    }
+
+    function parseClock(seconds) {
+        const clock = document.getElementById('timer');
     
-    <script>
-        function updateClock() {
-            const clock = document.getElementById('clock');
-            const now = new Date();
-            const time = now.toLocaleTimeString('es-ES');
-            clock.textContent = time;
+        const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+
+        clock.textContent = `${hours}:${minutes}:${secs}`;
+    }
+
+    // Mostrar mensajes temporales
+    function showMessage(type, message) {
+        const msgDiv = document.getElementById("statusMessage");
+        if (!msgDiv) return;
+        msgDiv.className = "alert d-block mb-4 alert-" + type;
+        msgDiv.textContent = message;
+        setTimeout(() => {
+            msgDiv.classList.add("d-none");
+        }, 5000);
+    }
+
+    // Actualizar bloque de estado
+    function refreshStatusCard() {
+        fetch('/dashboard/status')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, "text/html");
+                const newContent = doc.querySelector(".status-card");
+                const currentDiv = document.querySelector("#statusCardContainer .status-card");
+                if (currentDiv && newContent) {
+                    currentDiv.outerHTML = newContent.outerHTML;
+                    setupButtonEvents(); // Reasignar eventos a los nuevos botones
+                }
+            });
+    }
+
+    // Asignar eventos a los botones
+    function setupButtonEvents() {
+        const checkInBtn = document.getElementById("checkInBtn");
+        const checkOutBtn = document.getElementById("checkOutBtn");
+
+        if (checkInBtn) {
+            checkInBtn.replaceWith(checkInBtn.cloneNode(true));
+            document.getElementById("checkInBtn")?.addEventListener("click", sendCheckIn);
+        }
+
+        if (checkOutBtn) {
+            checkOutBtn.replaceWith(checkOutBtn.cloneNode(true));
+            document.getElementById("checkOutBtn")?.addEventListener("click", sendCheckOut);
+        }
+    }
+
+    // Enviar Check-In
+    function sendCheckIn() {
+        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        fetch('/employee/timerecord/checkin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrfHeader]: csrfToken
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                showMessage("success", "Entrada registrada correctamente.");
+                startRealTimeTimer(Math.floor(Date.now() / 1000), [[${totalWorkedSeconds}]]);
+                refreshStatusCard();
+            } else {
+                showMessage("danger", "Error al registrar la entrada.");
+            }
+        });
+    }
+
+    // Enviar Check-Out
+    function sendCheckOut() {
+        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        fetch('/employee/timerecord/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrfHeader]: csrfToken
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                showMessage("success", "Salida registrada correctamente.");
+
+                // Detener el temporizador al hacer check-out
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+
+                refreshStatusCard();
+            } else {
+                showMessage("danger", "Error al registrar la salida.");
+            }
+        });
+    }
+
+    // Temporizador en tiempo real
+    function startRealTimeTimer(startTime, baseSeconds) {
+        const timerElement = document.getElementById("timer");
+        if (!timerElement) return;
+
+        let base = baseSeconds || 0;
+        let lastUpdateTime = startTime || Math.floor(Date.now() / 1000);
+
+        function updateTimer() {
+            const now = Math.floor(Date.now() / 1000);
+            const elapsed = now - lastUpdateTime;
+            const total = base + elapsed;
+
+            const limit = 28800; // 8 horas en segundos
+
+            if (total >= limit) {
+                timerElement.textContent = "08:00:00";
+                sendCheckOut();
+                clearInterval(timerInterval);
+                const checkInBtn = document.getElementById("checkInBtn");
+                const checkOutBtn = document.getElementById("checkOutBtn");
+                const limitMessage = document.getElementById("timeLimitMessage");
+                if (checkInBtn) checkInBtn.disabled = true;
+                if (checkOutBtn) checkOutBtn.disabled = true;
+                if (limitMessage) limitMessage.classList.remove("d-none");
+                return;
+            }
+
+            const hours = String(Math.floor(total / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+            const seconds = String(total % 60).padStart(2, '0');
+
+            timerElement.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        if (timerInterval) clearInterval(timerInterval); // Limpiar si ya existe
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer(); // Ejecutar inmediatamente
+    }
+
+    // Iniciar componentes
+    document.addEventListener("DOMContentLoaded", function () {
+        setupButtonEvents();
+
+        const checkOutBtn = document.getElementById("checkOutBtn");
+        const baseSeconds = parseInt([[${totalWorkedSeconds}]]) || 0;
+        if (checkOutBtn) {
+            startRealTimeTimer(Math.floor(Date.now() / 1000), baseSeconds);
         }
         
-        setInterval(updateClock, 1000);
+        parseClock(baseSeconds);
         updateClock();
-    </script>
+        setInterval(updateClock, 1000);
+    });
+</script>
 </body>
 </html>

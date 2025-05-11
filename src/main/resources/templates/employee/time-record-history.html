@@ -47,12 +47,6 @@
                         <td th:text="${#temporals.format(record.startTime, 'dd/MM/yyyy HH:mm')}"></td>
                         <td th:text="${record.endTime != null ? #temporals.format(record.endTime, 'dd/MM/yyyy HH:mm') : 'En curso'}"></td>
                         <td th:text="${#numbers.formatDecimal(record.hours, 1, 2)}"></td>
-                        <td>
-                            <span th:class="${record.status == 'PENDING' ? 'badge bg-warning' : (record.status == 'APPROVED' ? 'badge bg-success' : 'badge bg-danger')}"
-                                  th:text="${record.status == 'PENDING' ? 'Pendiente' : (record.status == 'APPROVED' ? 'Aprobado' : 'Rechazado')}">
-                            </span>
-                        </td>
-                        <td th:text="${record.notes ?: 'Sin notas'}"></td>
                     </tr>
                 </tbody>
             </table>

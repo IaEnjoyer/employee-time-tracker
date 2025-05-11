@@ -18,31 +18,26 @@ public class TimeRecord {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false,name="hora_entrada")
     private LocalDateTime startTime;
 
-    @Column
+    @Column(name="hora_salida")
     private LocalDateTime endTime;
 
     @Column
     private String rejectionReason;
 
-    @Column(length = 1000)
-    private String notes;
+    @Column(name="horas_estipuladas")
+    private Double hours;
 
-    @Column
-    private double hours;
+    @Column(name="horas_ordinarias")
+    private Double hoursOrdinary =8d;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status = Status.PENDING;
+    @Column(name="dispositivo")
+    private String dispositivo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by")
-    private User approvedBy;
-
-    @Column
-    private LocalDateTime approvalDate;
+    @Column(name="ip")
+    private String ip;
 
     @PrePersist
     @PreUpdate
@@ -51,12 +46,6 @@ public class TimeRecord {
             Duration duration = Duration.between(startTime, endTime);
             hours = duration.toMinutes() / 60.0;
         }
-    }
-
-    public enum Status {
-        PENDING,
-        APPROVED,
-        REJECTED
     }
 
     public double getHours() {
@@ -68,9 +57,5 @@ public class TimeRecord {
             return 0;
         }
         return Duration.between(startTime, endTime).toHours();
-    }
-
-    public boolean isApproved() {
-        return status.equals(Status.APPROVED);
     }
 }

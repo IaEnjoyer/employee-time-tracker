@@ -5,6 +5,7 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.ui.Model;
 
 import com.iaenjoyer.employeetimetracker.model.TimeRecord;
 import com.iaenjoyer.employeetimetracker.model.User;
+import com.iaenjoyer.employeetimetracker.report.service.JasperFichajesService;
 import com.iaenjoyer.employeetimetracker.service.TimeRecordService;
 import com.iaenjoyer.employeetimetracker.service.UserService;
 
@@ -32,20 +34,31 @@ import lombok.extern.slf4j.Slf4j;
 public class EmployeeTimeRecordController {
     private final TimeRecordService timeRecordService;
     private final UserService userService;
+    @Autowired  
+    private final JasperFichajesService jasperFichajesService;
 
     @PostMapping("/checkin")
-    @ResponseBody
-    public ResponseEntity<TimeRecord> checkIn(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<String> checkIn(@AuthenticationPrincipal User currentUser, HttpServletRequest request, Model model) {
         try {
             validateUserForCheckIn(currentUser);
-            TimeRecord timeRecord = performCheckIn(currentUser);
-            return ResponseEntity.ok(timeRecord);
+            TimeRecord record = performCheckIn(currentUser, request);
+            model.addAttribute("activeRecord", record);
+            return ResponseEntity.ok("Checked in");
         } catch (UserAlreadyCheckedInException e) {
-            log.warn("Check-in failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Already checked in");
         } catch (Exception e) {
-            log.error("Unexpected error during check-in", e);
-            return ResponseEntity.internalServerError().body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
+        }
+    }
+
+    @PostMapping("/checkout")
+    public ResponseEntity<String> checkOut(@AuthenticationPrincipal User user, Model model) {
+        try {
+            timeRecordService.endTimeRecord(user);
+            model.addAttribute("activeRecord", null);
+            return ResponseEntity.ok("Checked out");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
         }
     }
 
@@ -61,33 +74,30 @@ public class EmployeeTimeRecordController {
         }
     }
 
-    private TimeRecord performCheckIn(User user) {
-        // Ensure user is fully loaded
-        User fullUser = userService.findById(user.getId()).orElse(null);
+    private TimeRecord performCheckIn(User user, HttpServletRequest request) {
+        User fullUser = userService.findById(user.getId()).orElseThrow();
         
+        String ipAddress = getClientIP(request);
+        String deviceInfo = request.getHeader("User-Agent");
+    
         log.info("Performing check-in for user: {}", fullUser.getUsername());
-        return timeRecordService.startTimeRecord(fullUser);
+        log.info("IP Address: {}, Device Info: {}", ipAddress, deviceInfo);
+    
+        return timeRecordService.startTimeRecord(fullUser, ipAddress, deviceInfo);
+    }
+    private String getClientIP(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader != null && !xfHeader.isEmpty() && !"unKnown".equalsIgnoreCase(xfHeader)) {
+            // Si hay varios IPs separados por comas, tomar el primero
+            return xfHeader.split(",")[0];
+        }
+        return request.getRemoteAddr();
     }
 
     // Custom exception for check-in validation
     private static class UserAlreadyCheckedInException extends RuntimeException {
         public UserAlreadyCheckedInException(String message) {
             super(message);
-        }
-    }
-
-    @PostMapping("/checkout")
-    @ResponseBody
-    public ResponseEntity<TimeRecord> checkOut(@AuthenticationPrincipal User user) {
-        try {
-            log.debug("Attempting check-out for user: {}", user.getUsername());
-            TimeRecord record = timeRecordService.endTimeRecord(user);
-            log.info("Check-out successful for user: {}", user.getUsername());
-            return ResponseEntity.ok(record);
-        } catch (Exception e) {
-            log.error("Error during check-out for user: {}", user.getUsername(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(null);
         }
     }
 

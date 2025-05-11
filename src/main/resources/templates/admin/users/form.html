@@ -36,8 +36,8 @@
                         
                         <div class="mb-3">
                             <label for="employeeId" class="form-label">Documento de Identificación</label>
-                            <input type="text" class="form-control" id="employeeId" th:field="*{employeeId}" required>
-                            <div class="text-danger" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
+                            <input type="text" class="form-control" id="employeeId" th:field="*{nif}" required>
+                            <div class="text-danger" th:if="${#fields.hasErrors('nif')}" th:errors="*{nif}"></div>
                         </div>
 
                         <div class="mb-3">

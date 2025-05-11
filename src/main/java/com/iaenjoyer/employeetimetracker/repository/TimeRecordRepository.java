@@ -21,6 +21,5 @@ public interface TimeRecordRepository extends JpaRepository<TimeRecord, Long> {
     List<TimeRecord> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     List<TimeRecord> findByUserIn(List<User> users);
     List<TimeRecord> findAllByOrderByStartTimeDesc(Pageable pageable);
-    List<TimeRecord> findByStatus(TimeRecord.Status status);
     boolean existsByUser(User user);
 }

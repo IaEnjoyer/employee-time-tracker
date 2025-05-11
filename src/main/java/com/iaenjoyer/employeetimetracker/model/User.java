@@ -51,19 +51,6 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private int dataRetentionDays = 1460; // 4 años según la ley española
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_id")
-    @ToString.Exclude
-    private Schedule schedule;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supervisor_id")
-    private User supervisor;
-
-    @OneToMany(mappedBy = "supervisor")
-    @ToString.Exclude
-    private Set<User> supervisedEmployees;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private Set<TimeRecord> timeRecords;
@@ -72,6 +59,8 @@ public class User implements UserDetails {
     private String notes;
 
     private String photoUrl;
+
+    private String nif;
 
     private LocalDateTime hireDate;
 

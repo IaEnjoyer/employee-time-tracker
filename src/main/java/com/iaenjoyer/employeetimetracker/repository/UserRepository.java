@@ -22,15 +22,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     boolean existsByEmployeeId(String employeeId);
-
-    @Query("SELECT u FROM User u WHERE u.supervisor = :supervisor AND u.role = :role")
-    List<User> findBySupervisorAndRole(@Param("supervisor") User supervisor, @Param("role") Role role);
-
-    @Query("SELECT u FROM User u WHERE u.id = :id AND u.role = :role")
     Optional<User> findByIdAndRole(@Param("id") Long id, @Param("role") Role role);
-
-    List<User> findBySupervisor(User supervisor);
-
-    @Query("SELECT u FROM User u WHERE u.supervisor = :supervisor")
-    List<User> findBySupervisorCustom(@Param("supervisor") User supervisor);
 }

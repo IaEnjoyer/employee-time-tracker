@@ -70,6 +70,7 @@ public class AdminController {
     public String createUser(@ModelAttribute User user, Model model) {
         try {
             user.setStatus(User.UserStatus.ACTIVE);
+            user.setEmployeeId(user.getNif());
             user.setConsentDate(LocalDateTime.now(ZoneOffset.UTC)); // Normalización a UTC
             userService.createUser(user);
             return "redirect:/admin/users";
@@ -105,6 +106,7 @@ public class AdminController {
     @PostMapping("/users/{id}")
     public String updateUser(@PathVariable Long id, @ModelAttribute User user, Model model) {
         try {
+            user.setEmployeeId(user.getNif());
             userService.updateUser(id, user);
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {

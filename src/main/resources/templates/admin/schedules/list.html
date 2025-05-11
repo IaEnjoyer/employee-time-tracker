@@ -23,20 +23,18 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>Departamento</th>
-                                    <th>Tipo</th>
+                                    <th>Dispositivo</th>
+                                    <th>Ip</th>
                                     <th>Hora Entrada</th>
                                     <th>Hora Salida</th>
                                     <th>Días</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="schedule : ${schedules}">
                                     <td th:text="${schedule.name}">Nombre</td>
-                                    <td th:text="${schedule.department}">Departamento</td>
-                                    <td th:text="${schedule.type}">Tipo</td>
+                                    <td th:text="${schedule.dispositivo}">Dispositivo</td>
+                                    <td th:text="${schedule.ip}">Ip</td>
                                     <td th:text="${#temporals.format(schedule.startTime, 'HH:mm')}">09:00</td>
                                     <td th:text="${#temporals.format(schedule.endTime, 'HH:mm')}">18:00</td>
                                     <td>

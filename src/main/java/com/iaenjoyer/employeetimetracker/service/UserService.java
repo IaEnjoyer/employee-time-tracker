@@ -158,14 +158,13 @@ public class UserService implements UserDetailsService {
             userRepository.existsByEmployeeId(updatedUser.getEmployeeId())) {
             throw new IllegalArgumentException("El ID de empleado ya está registrado");
         }
-
+        
         existingUser.setName(updatedUser.getName());
         existingUser.setEmail(updatedUser.getEmail());
         existingUser.setDepartment(updatedUser.getDepartment());
         existingUser.setRole(updatedUser.getRole());
         existingUser.setStatus(updatedUser.getStatus());
-        existingUser.setSchedule(updatedUser.getSchedule());
-        existingUser.setSupervisor(updatedUser.getSupervisor());
+        existingUser.setNif(updatedUser.getEmployeeId());
         existingUser.setEmployeeId(updatedUser.getEmployeeId());
         existingUser.setNotes(updatedUser.getNotes());
 
@@ -213,11 +212,6 @@ public class UserService implements UserDetailsService {
     @Transactional(readOnly = true)
     public boolean isEmailTaken(String email) {
         return userRepository.existsByEmail(email);
-    }
-
-    @Transactional(readOnly = true)
-    public List<User> findEmployeesBySupervisor(User supervisor) {
-        return userRepository.findBySupervisorAndRole(supervisor, Role.EMPLOYEE);
     }
 
     @Transactional
@@ -275,28 +269,9 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("No se puede eliminar un usuario con registros de tiempo");
         }
 
-        // Eliminar referencias de supervisión
-        List<User> subordinates = userRepository.findBySupervisor(user);
-        for (User subordinate : subordinates) {
-            subordinate.setSupervisor(null);
-        }
-        userRepository.saveAll(subordinates);
-
         // Eliminar el usuario directamente
         userRepository.deleteById(id);
         userRepository.flush();
-    }
-
-    @Transactional(readOnly = true)
-    public List<User> getSubordinatesBySupervisor(User supervisor) {
-        return userRepository.findBySupervisor(supervisor);
-    }
-
-    @Transactional(readOnly = true)
-    public List<User> getSubordinatesBySupervisorId(Long supervisorId) {
-        User supervisor = userRepository.findById(supervisorId)
-            .orElseThrow(() -> new IllegalArgumentException("Supervisor no encontrado"));
-        return userRepository.findBySupervisor(supervisor);
     }
 
     private void validateNewUser(User user) {

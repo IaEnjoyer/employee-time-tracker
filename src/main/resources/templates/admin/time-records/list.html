@@ -61,8 +61,6 @@
                                     <th>Departamento</th>
                                     <th>Inicio</th>
                                     <th>Fin</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -72,30 +70,6 @@
                                     <td th:text="${record.user.department}">IT</td>
                                     <td th:text="${#temporals.format(record.startTime, 'dd/MM/yyyy HH:mm')}">01/01/2025 09:00</td>
                                     <td th:text="${record.endTime != null ? #temporals.format(record.endTime, 'dd/MM/yyyy HH:mm') : 'En curso'}">01/01/2025 18:00</td>
-                                    <td>
-                                        <span th:switch="${record.status}" class="badge" 
-                                              th:classappend="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING} ? 'badge-warning' : 
-                                                             (${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).APPROVED} ? 'badge-success' : 
-                                                             'badge-danger')">
-                                            <span th:case="PENDING">Pendiente</span>
-                                            <span th:case="APPROVED">Aprobado</span>
-                                            <span th:case="REJECTED">Rechazado</span>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
-                                                    class="btn btn-success btn-sm approve-record" 
-                                                    th:data-id="${record.id}">
-                                                <i class="fas fa-check"></i> Aprobar
-                                            </button>
-                                            <button th:if="${record.status == T(com.iaenjoyer.employeetimetracker.model.TimeRecord.Status).PENDING}" 
-                                                    class="btn btn-danger btn-sm reject-record" 
-                                                    th:data-id="${record.id}">
-                                                <i class="fas fa-times"></i> Rechazar
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                             </tbody>
                         </table>
