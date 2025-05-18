@@ -71,21 +71,6 @@
                                 Mi Informe Personal
                                 <small class="text-muted d-block">Generar informe de horas trabajadas</small>
                             </a>
-                            <a th:href="@{/request-vacation}" class="list-group-item list-group-item-action">
-                                <i class="fas fa-umbrella-beach me-2"></i>
-                                Solicitar Vacaciones
-                                <small class="text-muted d-block">Gestionar días de vacaciones</small>
-                            </a>
-                            <a th:href="@{/report-sick-leave}" class="list-group-item list-group-item-action">
-                                <i class="fas fa-procedures me-2"></i>
-                                Comunicar Baja
-                                <small class="text-muted d-block">Informar ausencia por enfermedad</small>
-                            </a>
-                            <a th:href="@{/schedules}" class="list-group-item list-group-item-action">
-                                <i class="fas fa-calendar-alt me-2"></i>
-                                Mi Horario
-                                <small class="text-muted d-block">Ver mi horario asignado</small>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -118,13 +103,6 @@
                                             Horas Trabajadas
                                         </td>
                                         <td th:text="${monthlyHours ?: '0'} + ' horas'">0 horas</td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <i class="fas fa-umbrella-beach text-warning me-2"></i>
-                                            Días de Vacaciones Disponibles
-                                        </td>
-                                        <td th:text="${vacationDays ?: '0'} + ' días'">0 días</td>
                                     </tr>
                                     <tr>
                                         <td>

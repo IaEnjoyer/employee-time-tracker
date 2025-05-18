@@ -2,7 +2,6 @@ package com.iaenjoyer.employeetimetracker.controller;
 
 import com.iaenjoyer.employeetimetracker.model.*;
 import com.iaenjoyer.employeetimetracker.service.*;
-import com.iaenjoyer.employeetimetracker.service.pdf.PdfGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -34,9 +31,7 @@ public class AdminController {
 
     private final UserService userService;
     private final TimeRecordService timeRecordService;
-    private final PdfGeneratorService pdfGeneratorService;
     private final NotificationService notificationService;
-    private final ScheduleService scheduleService;
     private final ReportGeneratorService reportGeneratorService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -44,8 +39,6 @@ public class AdminController {
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         model.addAttribute("activeUsers", userService.getActiveUsers());
-        model.addAttribute("usersOnVacation", userService.getUsersOnVacation());
-        model.addAttribute("usersOnSickLeave", userService.getUsersOnSickLeave());
         model.addAttribute("recentTimeRecords", timeRecordService.findRecentRecords());
         return "admin/dashboard";
     }
@@ -54,7 +47,6 @@ public class AdminController {
     public String listUsers(Model model) {
         model.addAttribute("users", userService.findAll());
         model.addAttribute("roles", Role.values());
-        model.addAttribute("schedules", scheduleService.findAll());
         return "admin/users/list";
     }
 
@@ -62,7 +54,6 @@ public class AdminController {
     public String newUserForm(Model model) {
         model.addAttribute("user", new User());
         model.addAttribute("roles", Role.values());
-        model.addAttribute("schedules", scheduleService.findAll());
         return "admin/users/form";
     }
 
@@ -79,7 +70,6 @@ public class AdminController {
             model.addAttribute("error", "Error al crear usuario: " + e.getMessage());
             model.addAttribute("user", user);
             model.addAttribute("roles", Role.values());
-            model.addAttribute("schedules", scheduleService.findAll());
             return "admin/users/form";
         }
     }
@@ -91,7 +81,6 @@ public class AdminController {
                 user -> {
                     model.addAttribute("user", user);
                     model.addAttribute("roles", Role.values());
-                    model.addAttribute("schedules", scheduleService.findAll());
                 },
                 () -> logger.error("Usuario no encontrado con ID: {}", id)
             );
@@ -114,7 +103,6 @@ public class AdminController {
             model.addAttribute("error", "Error al actualizar usuario: " + e.getMessage());
             model.addAttribute("user", user);
             model.addAttribute("roles", Role.values());
-            model.addAttribute("schedules", scheduleService.findAll());
             return "admin/users/form";
         }
     }
@@ -185,8 +173,6 @@ public class AdminController {
             if (start.isAfter(end)) {
                 throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin");
             }
-            Map<String, Object> reportData = reportGeneratorService.generateGeneralReport(start, end);
-            List<TimeRecord> records = (List<TimeRecord>) reportData.get("records");
             String filename = String.format("reporte_general_%s", start.format(DATE_FORMATTER));
             byte[] report;
             if ("pdf".equals(format)) {

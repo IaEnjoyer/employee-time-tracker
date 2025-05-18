@@ -131,26 +131,11 @@
                 <div class="card-body">
                     <h5 class="card-title">Acciones Rápidas</h5>
                     <div class="row g-3">
-                        <!-- <div class="col-md-4">
-                            <a th:href="@{/employee/timerecord/history}" class="btn btn-outline-secondary btn-quick-action w-100">
-                                <i class="fas fa-history"></i> Historial de Registros
-                            </a>
-                        </div>-->
                         <div class="col-md-12">
                             <a th:href="@{/employee/timerecord/report}" class="btn btn-outline-info btn-quick-action w-100">
                                 <i class="fas fa-file-alt"></i> Generar Informe Personal
                             </a>
                         </div>
-                        <!-- <div class="col-md-4">
-                            <a href="#" class="btn btn-outline-primary btn-quick-action w-100" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
-                                <i class="fas fa-calendar-check"></i> Solicitar Permiso
-                            </a>
-                        </div>                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal: Solicitar Permiso -->
 <div class="modal fade" id="leaveRequestModal" tabindex="-1">
@@ -166,8 +151,6 @@
                         <label for="leaveType" class="form-label">Tipo de Permiso</label>
                         <select class="form-select" id="leaveType" name="leaveType" required>
                             <option value="">Seleccionar tipo de permiso</option>
-                            <option value="VACATION">Vacaciones</option>
-                            <option value="SICK_LEAVE">Baja Médica</option>
                             <option value="PERSONAL">Asuntos Personales</option>
                         </select>
                     </div>

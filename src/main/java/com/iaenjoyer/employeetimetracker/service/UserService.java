@@ -50,16 +50,6 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> getUsersOnVacation() {
-        return userRepository.findByStatus(User.UserStatus.ON_VACATION);
-    }
-
-    @Transactional(readOnly = true)
-    public List<User> getUsersOnSickLeave() {
-        return userRepository.findByStatus(User.UserStatus.ON_SICK_LEAVE);
-    }
-
-    @Transactional(readOnly = true)
     public List<User> getUsersByDepartment(String department) {
         return userRepository.findByDepartment(department);
     }

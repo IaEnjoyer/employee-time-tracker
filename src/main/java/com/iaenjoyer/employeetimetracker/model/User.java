@@ -107,8 +107,6 @@ public class User implements UserDetails {
 
     public enum UserStatus {
         ACTIVE,
-        ON_VACATION,
-        ON_SICK_LEAVE,
         INACTIVE,
         PENDING_APPROVAL
     }

@@ -32,13 +32,6 @@
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>
-                            {% if user.schedule %}
-                                {{ user.schedule.start_time }} - {{ user.schedule.end_time }}
-                            {% else %}
-                                <span class="badge bg-warning">No asignado</span>
-                            {% endif %}
-                        </td>
-                        <td>
                             {% if user.is_active %}
                                 <span class="badge bg-success">Activo</span>
                             {% else %}
