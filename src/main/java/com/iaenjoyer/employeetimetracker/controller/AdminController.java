@@ -96,6 +96,7 @@ public class AdminController {
     public String updateUser(@PathVariable Long id, @ModelAttribute User user, Model model) {
         try {
             user.setEmployeeId(user.getNif());
+            user.setStatus(User.UserStatus.ACTIVE);
             userService.updateUser(id, user);
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {

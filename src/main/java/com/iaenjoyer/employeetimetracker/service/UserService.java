@@ -149,6 +149,7 @@ public class UserService implements UserDetailsService {
             throw new IllegalArgumentException("El ID de empleado ya está registrado");
         }
         
+        existingUser.setUsername(updatedUser.getUsername());
         existingUser.setName(updatedUser.getName());
         existingUser.setEmail(updatedUser.getEmail());
         existingUser.setDepartment(updatedUser.getDepartment());
