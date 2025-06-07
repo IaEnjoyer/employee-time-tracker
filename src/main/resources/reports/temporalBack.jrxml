@@ -42,7 +42,7 @@
 	</subDataset>
 	<subDataset name="fichajesDataset" uuid="fd6a497c-7a2a-4e01-b3a3-94126567138c">
 		<field name="evento" class="java.lang.String"/>
-		<field name="horaFormateada" class="java.lang.String"/>
+		<field name="hora" class="java.time.LocalDateTime"/>
 		<field name="ip" class="java.lang.String"/>
 		<field name="dispositivo" class="java.lang.String"/>
 		<field name="id" class="java.lang.Long"/>
@@ -143,7 +143,7 @@
 	<detail>
 		<band height="145">
 			<componentElement>
-				<reportElement x="1" y="0" width="534" height="125" uuid="493b8a77-80ed-4a5c-b511-082bda7505f0">
+				<reportElement x="1" y="0" width="534" height="145" uuid="493b8a77-80ed-4a5c-b511-082bda7505f0">
 					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
 					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
@@ -155,7 +155,7 @@
 					</datasetRun>
 					<jr:column width="534" uuid="6cdf04cf-69ee-4f90-83ae-555b903ddbc4">
 						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
-						<jr:tableHeader style="Table_TH" height="30" rowSpan="1">
+						<jr:tableHeader style="Table_TH" height="30">
 							<frame>
 								<reportElement x="0" y="0" width="534" height="30" uuid="810b0fb4-295a-4ad8-9883-15364c552f54"/>
 								<staticText>
@@ -172,26 +172,26 @@
 								</textField>
 							</frame>
 						</jr:tableHeader>
-						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+						<jr:columnFooter style="Table_CH" height="30">
 							<frame>
-								<reportElement x="0" y="0" width="534" height="30" uuid="8c053b94-27fb-4aa1-acb1-dda5f9894296"/>
+								<reportElement x="0" y="0" width="534" height="30" uuid="7ed88722-171f-4cbc-8bb3-2914c2bedd75"/>
 								<staticText>
-									<reportElement x="0" y="0" width="120" height="30" forecolor="#005C70" uuid="6bfa0fad-cf73-476d-854b-7697f8cedf7c"/>
+									<reportElement x="0" y="0" width="120" height="30" forecolor="#005C70" uuid="7278eed4-b3d3-4edc-ac75-1f15f8254483"/>
 									<textElement textAlignment="Center" verticalAlignment="Middle">
 										<font size="14" isUnderline="false"/>
 									</textElement>
 									<text><![CDATA[Total horas mes:]]></text>
 								</staticText>
 								<textField>
-									<reportElement x="120" y="0" width="414" height="30" uuid="d01640d5-86bd-4659-8b0f-ea4636c00aad"/>
+									<reportElement x="120" y="0" width="414" height="30" uuid="e107d097-f47c-40b2-b321-524be5d5cbf5"/>
 									<textElement textAlignment="Left" verticalAlignment="Middle"/>
 									<textFieldExpression><![CDATA["Establecidas: "+$F{totalEstablecidas}+" - Ordinarias: "+$F{totalOrdinarias}]]></textFieldExpression>
 								</textField>
 							</frame>
-						</jr:tableFooter>
-						<jr:detailCell style="Table_TD" height="65">
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="80">
 							<frame>
-								<reportElement x="0" y="0" width="534" height="65" uuid="044bed58-1955-443f-bf16-ff601b832616"/>
+								<reportElement x="0" y="0" width="534" height="80" uuid="044bed58-1955-443f-bf16-ff601b832616"/>
 								<staticText>
 									<reportElement mode="Opaque" x="0" y="0" width="100" height="25" forecolor="#FFFFFF" backcolor="#1E497D" uuid="4514940a-db97-4481-8f40-d042a567fb09"/>
 									<textElement textAlignment="Center" verticalAlignment="Middle"/>
@@ -253,7 +253,7 @@
 																<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
 															</box>
 															<textElement textAlignment="Center" verticalAlignment="Middle"/>
-															<textFieldExpression><![CDATA[$F{horaFormateada}]]></textFieldExpression>
+															<textFieldExpression><![CDATA[$F{hora}]]></textFieldExpression>
 														</textField>
 														<textField>
 															<reportElement x="210" y="0" width="110" height="20" uuid="2c6a1e4a-97df-4edf-a9ff-8561ecdef048"/>

@@ -24,7 +24,7 @@ public class FichajeDetalleDTO {
         this.horaFormateada = horaFormateada;
     }
     public String getHoraFormateada() {
-        return hora != null ? hora.format(DateTimeFormatter.ofPattern("HH:mm:ss")) : "";
+        return hora != null ? hora.format(DateTimeFormatter.ofPattern("dd/MM/yy HH:mm")) : "";
     }
 
     public FichajeDetalleDTO() {

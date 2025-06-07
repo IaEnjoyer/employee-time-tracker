@@ -105,70 +105,6 @@ public class TimeRecordService {
         return timeRecordRepository.save(record);
     }
 
-    private List<RegistroFichajeDTO> convertirAregistroFichajeDTO(Map<YearMonth, Map<Integer, List<TimeRecord>>> registrosFichajes) {
-        List<RegistroFichajeDTO> registros = new ArrayList<>();
-
-        for (Map.Entry<YearMonth, Map<Integer, List<TimeRecord>>> entryYearMonth : registrosFichajes.entrySet()) {
-            YearMonth yearMonth = entryYearMonth.getKey();
-            Map<Integer, List<TimeRecord>> dayGroup = entryYearMonth.getValue();
-
-            RegistroFichajeDTO registroMes = new RegistroFichajeDTO();
-            registroMes.setMes(yearMonth.getMonthValue());
-            registroMes.setAnio(yearMonth.getYear());
-
-            double totalEstablecidas = dayGroup.values().stream()
-                    .flatMap(List::stream)
-                    .mapToDouble(r -> r.getHours())
-                    .sum();
-
-            double totalOrdinarias = dayGroup.values().size()*8;
-
-            registroMes.setTotalEstablecidas(totalEstablecidas);
-            registroMes.setTotalOrdinarias(totalOrdinarias);
-
-            List<FichajeDiaDTO> dias = new ArrayList<>();
-
-            for (Map.Entry<Integer, List<TimeRecord>> entryDay : dayGroup.entrySet()) {
-                int dia = entryDay.getKey();
-                List<TimeRecord> recordsOfDay = entryDay.getValue();
-
-                FichajeDiaDTO fichajeDia = new FichajeDiaDTO();
-                fichajeDia.setDia(dia);
-
-                List<FichajeDetalleDTO> detalles = new ArrayList<>();
-
-                for (TimeRecord record : recordsOfDay) {
-                    // Entrada
-                    if (record.getStartTime() != null) {
-                        detalles.add(new FichajeDetalleDTO(
-                                record.getId(),
-                                "entrada",
-                                record.getStartTime(),
-                                record.getIp(),
-                                record.getDispositivo()));
-                    }
-
-                    // Salida
-                    if (record.getEndTime() != null) {
-                        detalles.add(new FichajeDetalleDTO(
-                                record.getId(),
-                                "salida",
-                                record.getEndTime(),
-                                record.getIp(),
-                                record.getDispositivo()));
-                    }
-                }
-
-                fichajeDia.setFichajeDetalleDTOs(detalles);
-                dias.add(fichajeDia);
-            }
-
-            registroMes.setFichajesDia(dias);
-            registros.add(registroMes);
-        }
-        return registros;
-    }
-
     public List<InformeFichajeDTO> convertToInformeFichajeDTO(List<TimeRecord> timeRecords) {
         if (timeRecords == null || timeRecords.isEmpty()) {
             return Collections.emptyList();
@@ -201,6 +137,7 @@ public class TimeRecordService {
                 String[] parts = monthEntry.getKey().split("-");
                 int mes = Integer.parseInt(parts[0]);
                 int anio = Integer.parseInt(parts[1]);
+                Duration totalDuration = Duration.ZERO; // Acumulador de tiempo
     
                 RegistroFichajeDTO registro = new RegistroFichajeDTO();
                 registro.setMes(mes);
@@ -219,7 +156,9 @@ public class TimeRecordService {
                     fichajeDia.setDia(dayEntry.getKey());
     
                     List<FichajeDetalleDTO> detalles = new ArrayList<>();
-    
+                    LocalDateTime entrada = null;
+                    LocalDateTime salida = null;
+                    
                     for (TimeRecord record : dayEntry.getValue()) {
                         // Entrada
                         if (record.getStartTime() != null) {
@@ -230,6 +169,7 @@ public class TimeRecordService {
                                 record.getIp(),
                                 record.getDispositivo()
                             ));
+                            entrada = record.getStartTime();
                         }
     
                         // Salida
@@ -241,6 +181,10 @@ public class TimeRecordService {
                                 record.getIp(),
                                 record.getDispositivo()
                             ));
+                            salida = record.getEndTime();
+                        }
+                        if (entrada != null && salida != null) {
+                            totalDuration = totalDuration.plus(Duration.between(entrada, salida));
                         }
                     }
     
@@ -252,10 +196,9 @@ public class TimeRecordService {
     
                 // Calcular totales (puedes ajustar esta lógica según tus reglas)
                 double totalEstablecidas = dias.size() * 8.0; // Ejemplo simple
-                double totalOrdinarias = dias.size() * 8.0;
     
                 registro.setTotalEstablecidas(totalEstablecidas);
-                registro.setTotalOrdinarias(totalOrdinarias);
+                registro.setTotalOrdinarias(Math.round(totalDuration.toMinutes()/60d * 100.0) / 100.0);
     
                 registros.add(registro);
             }
