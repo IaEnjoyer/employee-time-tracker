@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -85,8 +86,9 @@ public class TimeRecordService {
         }
 
         TimeRecord record = new TimeRecord();
+        ZonedDateTime nowInMadrid = ZonedDateTime.now(ZoneId.of("Europe/Madrid"));
         record.setUser(user);
-        record.setStartTime(LocalDateTime.now());
+        record.setStartTime(nowInMadrid.toLocalDateTime());
         record.setIp(ipAddress);
         record.setHours(0d);
         record.setDispositivo(deviceInfo); // Campo nuevo
