@@ -78,15 +78,15 @@ public class TimeRecordService {
     @Transactional
     public TimeRecord startTimeRecord(User user, String ipAddress, String deviceInfo) {
         // Verify if an active record already exists
+        TimeRecord record = new TimeRecord();
+        ZonedDateTime nowInMadrid = ZonedDateTime.now(ZoneId.of("Europe/Madrid"));
         if (hasActiveTimeRecord(user)) {
             // Instead of throwing an exception, end the existing record and start a new one
             TimeRecord existingRecord = findActiveRecord(user).get();
-            existingRecord.setEndTime(LocalDateTime.now());
+            existingRecord.setEndTime(nowInMadrid.toLocalDateTime());
             return timeRecordRepository.save(existingRecord);
         }
 
-        TimeRecord record = new TimeRecord();
-        ZonedDateTime nowInMadrid = ZonedDateTime.now(ZoneId.of("Europe/Madrid"));
         record.setUser(user);
         record.setStartTime(nowInMadrid.toLocalDateTime());
         record.setIp(ipAddress);
