@@ -98,12 +98,12 @@ public class TimeRecordService {
     @Transactional
     public TimeRecord endTimeRecord(User user) {
         Optional<TimeRecord> activeRecord = findActiveRecord(user);
+        TimeRecord record = activeRecord.get();
+        ZonedDateTime nowInMadrid = ZonedDateTime.now(ZoneId.of("Europe/Madrid"));
         if (activeRecord.isEmpty()) {
             throw new IllegalStateException("No hay un registro activo para este usuario");
         }
-
-        TimeRecord record = activeRecord.get();
-        record.setEndTime(LocalDateTime.now());
+        record.setEndTime(nowInMadrid.toLocalDateTime());
         return timeRecordRepository.save(record);
     }
 
